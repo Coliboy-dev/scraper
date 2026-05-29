@@ -87,9 +87,22 @@ async function main() {
     logger.step(6, 6, 'Extraction des contenus textuels');
     const content = await extractContent({ sitemap, outDir });
 
+    // Auto-generate base theme.json from design system (guarantees availability without opening Studio)
+    const { writeFile } = await import('fs/promises');
+    await ensureDir(path.join(outDir, 'mockup'));
+    await writeFile(
+      path.join(outDir, 'mockup', 'theme.json'),
+      JSON.stringify({
+        colors:        designSystem.colors      || {},
+        typography:    designSystem.typography  || {},
+        cssVariables:  designSystem.cssVars     || {},
+      }, null, 2),
+      'utf-8'
+    );
+    logger.done('theme.json généré depuis design-system');
+
     // Sections detection (confidence scores + layout variants)
     const sectionsData = buildSectionsJson(content, sitemap);
-    const { writeFile } = await import('fs/promises');
     await writeFile(
       path.join(outDir, 'analysis', 'sections.json'),
       JSON.stringify(sectionsData, null, 2),
