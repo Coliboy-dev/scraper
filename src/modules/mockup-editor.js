@@ -668,12 +668,14 @@ export function buildEditorPanel(designSystem) {
     }
     if (empty) empty.remove();
 
+    var escHtml = function(s) {
+      return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    };
     list.innerHTML = sectionsData.map(function(sec) {
       var confPct  = Math.round(sec.confidence * 100);
-      var confClass = confPct >= 80 ? 'high' : confPct >= 60 ? 'med' : 'low';
-      return '<div class="me-section-row' + (sec.visible ? '' : ' me-section-row--hidden') + '" data-section-id="' + sec.id + '">' +
-        '<span class="me-section-row__icon">' + (sec.icon || '▪') + '</span>' +
-        '<span class="me-section-row__label">' + sec.label + '</span>' +
+      return '<div class="me-section-row' + (sec.visible ? '' : ' me-section-row--hidden') + '" data-section-id="' + escHtml(sec.id) + '">' +
+        '<span class="me-section-row__icon">' + escHtml(sec.icon || '▪') + '</span>' +
+        '<span class="me-section-row__label">' + escHtml(sec.label) + '</span>' +
         '<span class="me-section-row__conf">' + confPct + '%</span>' +
         '<button class="me-section-row__eye" title="' + (sec.visible ? 'Masquer' : 'Afficher') + '">' + (sec.visible ? '👁' : '🚫') + '</button>' +
       '</div>';
@@ -1023,7 +1025,7 @@ export function buildEditorPanel(designSystem) {
   function hexOrKeep(val) {
     if (!val) return '#000000';
     if (val.startsWith('#')) return val;
-    var m = val.match(/rgba?\\((\\d+),(\\d+),(\\d+)/);
+    var m = val.match(/rgba?\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)/);
     if (!m) return '#000000';
     return '#' + [m[1],m[2],m[3]].map(function(n){ return parseInt(n).toString(16).padStart(2,'0'); }).join('');
   }

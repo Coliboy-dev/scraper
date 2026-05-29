@@ -71,7 +71,9 @@ function makeTarHeader(name, size) {
   const buf = Buffer.alloc(512);
   const w   = (val, off, len) => buf.write(String(val).slice(0, len), off, len, 'ascii');
 
-  w(name,                                           0, 100);
+  // TAR header name field is limited to 100 bytes; truncate with a warning if needed
+  const safeName = Buffer.byteLength(name, 'ascii') > 99 ? name.slice(0, 99) : name;
+  w(safeName,                                       0, 100);
   w('0000755',                                    100,   8);
   w('0001750',                                    108,   8);
   w('0001750',                                    116,   8);

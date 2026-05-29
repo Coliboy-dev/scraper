@@ -5,6 +5,15 @@ import { logger } from './utils/logger.js';
 import { buildEditorPanel } from './modules/mockup-editor.js';
 import { detectSections } from './modules/sections.js';
 
+function esc(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // Usage: node src/mockup.js <domain>
 // Example: node src/mockup.js www.creativequantic.be
 
@@ -111,7 +120,7 @@ function renderPage({ page, pageData, nav, logo, cssVars, fontImport, editorPane
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${pageData.title || h1}</title>
+  <title>${esc(pageData.title || h1)}</title>
   ${fontImport}
   <style>
     ${cssVars}
@@ -146,15 +155,15 @@ function renderIndex({ sitemap, content, domain, logo, cssVars, fontImport, desi
     const thumb = `${screenshotsRelPath}/${p.slug}--mobile.png`;
 
     return `
-    <a href="${p.slug}.html" class="page-card">
+    <a href="${esc(p.slug)}.html" class="page-card">
       <div class="page-card__thumb">
-        <img src="${thumb}" alt="${p.slug}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-        <div class="page-card__placeholder" style="display:none">${p.slug}</div>
+        <img src="${esc(thumb)}" alt="${esc(p.slug)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="page-card__placeholder" style="display:none">${esc(p.slug)}</div>
       </div>
       <div class="page-card__info">
-        <h3>${h1}</h3>
-        <p>${desc.slice(0, 90)}${desc.length > 90 ? '…' : ''}</p>
-        <span class="page-card__url">${p.url.replace(/https?:\/\//, '')}</span>
+        <h3>${esc(h1)}</h3>
+        <p>${esc(desc.slice(0, 90))}${desc.length > 90 ? '…' : ''}</p>
+        <span class="page-card__url">${esc(p.url.replace(/https?:\/\//, ''))}</span>
       </div>
     </a>`;
   }).join('');
@@ -298,11 +307,11 @@ function renderHero(variant, { h1, h2s, ctas, heroBg }) {
     return `
 <section class="hero hero--centered" style="${bgStyle}">
   <div class="container">
-    <h1>${title}</h1>
-    ${sub ? `<p class="hero__sub">${sub}</p>` : ''}
+    <h1>${esc(title)}</h1>
+    ${sub ? `<p class="hero__sub">${esc(sub)}</p>` : ''}
     <div class="hero__ctas">
-      ${cta1 ? `<a href="#" class="btn btn--primary">${cta1.text}</a>` : ''}
-      ${cta2 ? `<a href="#" class="btn btn--outline-white">${cta2.text}</a>` : ''}
+      ${cta1 ? `<a href="#" class="btn btn--primary">${esc(cta1.text)}</a>` : ''}
+      ${cta2 ? `<a href="#" class="btn btn--outline-white">${esc(cta2.text)}</a>` : ''}
     </div>
   </div>
 </section>`;
@@ -314,11 +323,11 @@ function renderHero(variant, { h1, h2s, ctas, heroBg }) {
   <div class="container hero__split-inner">
     <div class="hero__split-text">
       <p class="hero__eyebrow">Bienvenue</p>
-      <h1>${title}</h1>
-      ${sub ? `<p class="hero__sub">${sub}</p>` : ''}
+      <h1>${esc(title)}</h1>
+      ${sub ? `<p class="hero__sub">${esc(sub)}</p>` : ''}
       <div class="hero__ctas">
-        ${cta1 ? `<a href="#" class="btn btn--white">${cta1.text}</a>` : ''}
-        ${cta2 ? `<a href="#" class="btn btn--outline-white">${cta2.text}</a>` : ''}
+        ${cta1 ? `<a href="#" class="btn btn--white">${esc(cta1.text)}</a>` : ''}
+        ${cta2 ? `<a href="#" class="btn btn--outline-white">${esc(cta2.text)}</a>` : ''}
       </div>
     </div>
     <div class="hero__split-img">
@@ -334,11 +343,11 @@ function renderHero(variant, { h1, h2s, ctas, heroBg }) {
   <div class="hero__fullbg-overlay"></div>
   <div class="container hero__fullbg-content">
     <p class="hero__eyebrow">Bienvenue</p>
-    <h1>${title}</h1>
-    ${sub ? `<p class="hero__sub hero__sub--lg">${sub}</p>` : ''}
+    <h1>${esc(title)}</h1>
+    ${sub ? `<p class="hero__sub hero__sub--lg">${esc(sub)}</p>` : ''}
     <div class="hero__ctas">
-      ${cta1 ? `<a href="#" class="btn btn--primary btn--lg">${cta1.text}</a>` : ''}
-      ${cta2 ? `<a href="#" class="btn btn--outline-white btn--lg">${cta2.text}</a>` : ''}
+      ${cta1 ? `<a href="#" class="btn btn--primary btn--lg">${esc(cta1.text)}</a>` : ''}
+      ${cta2 ? `<a href="#" class="btn btn--outline-white btn--lg">${esc(cta2.text)}</a>` : ''}
     </div>
   </div>
   <div class="hero__scroll-hint"><span class="hero__scroll-arrow">↓</span></div>
@@ -356,7 +365,7 @@ function renderServices(variant, { h2s, sectionItems, ctas }) {
     const cards = items.slice(0, 6).map((t, i) => `
       <div class="card">
         <div class="card__icon">${icons[i % icons.length]}</div>
-        <h3 class="card__title">${typeof t === 'string' ? t.slice(0, 60) : 'Service ' + (i+1)}</h3>
+        <h3 class="card__title">${esc(typeof t === 'string' ? t.slice(0, 60) : 'Service ' + (i+1))}</h3>
         <p class="card__desc">Description de ce service ou fonctionnalité.</p>
       </div>`).join('');
     return `
@@ -364,7 +373,7 @@ function renderServices(variant, { h2s, sectionItems, ctas }) {
   <div class="container">
     <div class="section__header">
       <p class="section__eyebrow">Ce que nous proposons</p>
-      <h2 class="section__title">${title}</h2>
+      <h2 class="section__title">${esc(title)}</h2>
     </div>
     <div class="grid grid--3">${cards}</div>
   </div>
@@ -376,7 +385,7 @@ function renderServices(variant, { h2s, sectionItems, ctas }) {
       <div class="card card--wide">
         <div class="card__icon card__icon--lg">${icons[i % icons.length]}</div>
         <div class="card__content">
-          <h3 class="card__title">${typeof t === 'string' ? t.slice(0, 60) : 'Service ' + (i+1)}</h3>
+          <h3 class="card__title">${esc(typeof t === 'string' ? t.slice(0, 60) : 'Service ' + (i+1))}</h3>
           <p class="card__desc">Description plus détaillée de ce service ou fonctionnalité clé.</p>
           ${ctas[0] ? `<a href="#" class="card__link">En savoir plus →</a>` : ''}
         </div>
@@ -386,7 +395,7 @@ function renderServices(variant, { h2s, sectionItems, ctas }) {
   <div class="container">
     <div class="section__header">
       <p class="section__eyebrow">Ce que nous proposons</p>
-      <h2 class="section__title">${title}</h2>
+      <h2 class="section__title">${esc(title)}</h2>
     </div>
     <div class="grid grid--2">${cards}</div>
   </div>
@@ -398,7 +407,7 @@ function renderServices(variant, { h2s, sectionItems, ctas }) {
       <div class="list-item">
         <div class="list-item__icon">${icons[i % icons.length]}</div>
         <div class="list-item__body">
-          <h3>${typeof t === 'string' ? t.slice(0, 60) : 'Service ' + (i+1)}</h3>
+          <h3>${esc(typeof t === 'string' ? t.slice(0, 60) : 'Service ' + (i+1))}</h3>
           <p>Description de ce service ou avantage.</p>
         </div>
       </div>`).join('');
@@ -407,7 +416,7 @@ function renderServices(variant, { h2s, sectionItems, ctas }) {
   <div class="container container--narrow-lg">
     <div class="section__header">
       <p class="section__eyebrow">Ce que nous proposons</p>
-      <h2 class="section__title">${title}</h2>
+      <h2 class="section__title">${esc(title)}</h2>
     </div>
     <div class="list-icons">${rows}</div>
   </div>
@@ -426,10 +435,10 @@ function renderAbout(variant, { h2s, aboutTexts, aboutImg, ctas }) {
 
   const textBlock = `
     <div class="about__text">
-      <p class="section__eyebrow">${h2s[1] || 'Notre histoire'}</p>
-      <h2>${title}</h2>
-      ${texts.map(t => `<p>${t}</p>`).join('')}
-      ${cta ? `<a href="#" class="btn btn--primary">${cta.text}</a>` : ''}
+      <p class="section__eyebrow">${esc(h2s[1] || 'Notre histoire')}</p>
+      <h2>${esc(title)}</h2>
+      ${texts.map(t => `<p>${esc(t)}</p>`).join('')}
+      ${cta ? `<a href="#" class="btn btn--primary">${esc(cta.text)}</a>` : ''}
     </div>`;
   const imgBlock = `<div class="about__media">${imgHtml}</div>`;
 
@@ -461,10 +470,10 @@ function renderAbout(variant, { h2s, aboutTexts, aboutImg, ctas }) {
   <div class="container container--narrow">
     <div class="about__centered">
       <div class="about__media about__media--centered">${imgHtml}</div>
-      <p class="section__eyebrow" style="text-align:center">${h2s[1] || 'Notre histoire'}</p>
-      <h2 style="text-align:center">${title}</h2>
-      ${texts.map(t => `<p>${t}</p>`).join('')}
-      ${cta ? `<div style="text-align:center;margin-top:1.5rem"><a href="#" class="btn btn--primary">${cta.text}</a></div>` : ''}
+      <p class="section__eyebrow" style="text-align:center">${esc(h2s[1] || 'Notre histoire')}</p>
+      <h2 style="text-align:center">${esc(title)}</h2>
+      ${texts.map(t => `<p>${esc(t)}</p>`).join('')}
+      ${cta ? `<div style="text-align:center;margin-top:1.5rem"><a href="#" class="btn btn--primary">${esc(cta.text)}</a></div>` : ''}
     </div>
   </div>
 </section>`;
@@ -484,7 +493,7 @@ function renderTestimonials(variant, { h2s, testimonials }) {
     const cards = items.slice(0, 3).map(t => `
       <div class="testimonial">
         <div class="testimonial__stars">★★★★★</div>
-        <p>"${typeof t === 'string' ? t : 'Excellent témoignage client.'}"</p>
+        <p>"${esc(typeof t === 'string' ? t : 'Excellent témoignage client.')}"</p>
         <div class="testimonial__author">
           <div class="testimonial__avatar"></div>
           <span>Client satisfait</span>
@@ -494,7 +503,7 @@ function renderTestimonials(variant, { h2s, testimonials }) {
 <section class="section section--accent">
   <div class="container">
     <div class="section__header">
-      <h2 class="section__title" style="color:#fff">${title}</h2>
+      <h2 class="section__title" style="color:#fff">${esc(title)}</h2>
     </div>
     <div class="grid grid--3">${cards}</div>
   </div>
@@ -508,7 +517,7 @@ function renderTestimonials(variant, { h2s, testimonials }) {
   <div class="container container--narrow">
     <div class="quote-simple">
       <div class="quote-simple__icon">"</div>
-      <blockquote class="quote-simple__text">${t}</blockquote>
+      <blockquote class="quote-simple__text">${esc(t)}</blockquote>
       <cite class="quote-simple__author">— Client satisfait</cite>
     </div>
   </div>
@@ -527,7 +536,7 @@ function renderPricing(variant, { h2s, pricingItems, ctas }) {
     return `
     <div class="pricing-card ${isFeatured ? 'pricing-card--featured' : ''}">
       ${isFeatured ? '<div class="pricing-card__badge">Populaire</div>' : ''}
-      <h3>${typeof t === 'string' ? t.slice(0, 40) : 'Formule ' + (i+1)}</h3>
+      <h3>${esc(typeof t === 'string' ? t.slice(0, 40) : 'Formule ' + (i+1))}</h3>
       <div class="pricing-card__price">
         <span class="pricing-card__amount">—</span>
         <span class="pricing-card__period">/mois</span>
@@ -546,7 +555,7 @@ function renderPricing(variant, { h2s, pricingItems, ctas }) {
   <div class="container">
     <div class="section__header">
       <p class="section__eyebrow">Tarifs</p>
-      <h2 class="section__title">${title}</h2>
+      <h2 class="section__title">${esc(title)}</h2>
     </div>
     <div class="grid grid--${count} pricing-grid">${cards}</div>
   </div>
@@ -565,7 +574,7 @@ function renderFAQ(variant, { h2s, faqItems }) {
   if (variant === 'accordion') {
     const faqs = items.slice(0, 6).map((q, i) => `
       <details class="faq__item" ${i === 0 ? 'open' : ''}>
-        <summary class="faq__q">${typeof q === 'string' ? q.slice(0, 100) : 'Question ' + (i+1)}</summary>
+        <summary class="faq__q">${esc(typeof q === 'string' ? q.slice(0, 100) : 'Question ' + (i+1))}</summary>
         <div class="faq__a">Réponse à cette question fréquemment posée. Nous nous efforçons d'être le plus clair et complet possible.</div>
       </details>`).join('');
     return `
@@ -573,7 +582,7 @@ function renderFAQ(variant, { h2s, faqItems }) {
   <div class="container container--narrow-lg">
     <div class="section__header">
       <p class="section__eyebrow">FAQ</p>
-      <h2 class="section__title">${title}</h2>
+      <h2 class="section__title">${esc(title)}</h2>
     </div>
     <div class="faq">${faqs}</div>
   </div>
@@ -586,7 +595,7 @@ function renderFAQ(variant, { h2s, faqItems }) {
     const col2 = items.slice(half, half * 2);
     const renderCol = col => col.map((q, i) => `
       <div class="faq__item-simple">
-        <div class="faq__q-simple">Q — ${typeof q === 'string' ? q.slice(0, 100) : 'Question ' + (i+1)}</div>
+        <div class="faq__q-simple">Q — ${esc(typeof q === 'string' ? q.slice(0, 100) : 'Question ' + (i+1))}</div>
         <div class="faq__a-simple">Réponse à cette question fréquemment posée.</div>
       </div>`).join('');
     return `
@@ -594,7 +603,7 @@ function renderFAQ(variant, { h2s, faqItems }) {
   <div class="container">
     <div class="section__header">
       <p class="section__eyebrow">FAQ</p>
-      <h2 class="section__title">${title}</h2>
+      <h2 class="section__title">${esc(title)}</h2>
     </div>
     <div class="faq-two-col">
       <div class="faq-two-col__col">${renderCol(col1)}</div>
@@ -615,17 +624,18 @@ function renderContact(variant, { h2s, forms, allH2s }) {
     { type: 'text',  label: 'Sujet' },
     { type: 'textarea', label: 'Message' },
   ];
+  const safeType = (t) => /^(text|email|tel|number|url|date|textarea)$/.test(t) ? t : 'text';
   const formHtml = `
     <form class="form">
       ${fields.map(f => `
       <div class="form__group">
-        <label>${f.label || f.name || f.type}</label>
+        <label>${esc(f.label || f.name || f.type)}</label>
         ${f.type === 'textarea'
-          ? `<textarea placeholder="${f.label || 'Votre message'}" rows="5"></textarea>`
-          : `<input type="${f.type || 'text'}" placeholder="${f.label || ''}">`
+          ? `<textarea placeholder="${esc(f.label || 'Votre message')}" rows="5"></textarea>`
+          : `<input type="${safeType(f.type || 'text')}" placeholder="${esc(f.label || '')}">`
         }
       </div>`).join('')}
-      <button type="submit" class="btn btn--primary btn--full">${form?.submit || 'Envoyer le message'}</button>
+      <button type="submit" class="btn btn--primary btn--full">${esc(form?.submit || 'Envoyer le message')}</button>
     </form>`;
 
   if (variant === 'centered') {
@@ -634,7 +644,7 @@ function renderContact(variant, { h2s, forms, allH2s }) {
   <div class="container container--narrow">
     <div class="section__header">
       <p class="section__eyebrow">Contact</p>
-      <h2 class="section__title">${title}</h2>
+      <h2 class="section__title">${esc(title)}</h2>
     </div>
     ${formHtml}
   </div>
@@ -648,13 +658,8 @@ function renderContact(variant, { h2s, forms, allH2s }) {
     <div class="contact__split">
       <div class="contact__info">
         <p class="section__eyebrow">Contact</p>
-        <h2>${title}</h2>
+        <h2>${esc(title)}</h2>
         <p>Nous sommes disponibles pour répondre à toutes vos questions. N'hésitez pas à nous contacter.</p>
-        <ul class="contact__details">
-          <li>📧 contact@example.com</li>
-          <li>📞 +32 00 000 00 00</li>
-          <li>📍 Adresse, Ville</li>
-        </ul>
       </div>
       <div class="contact__form">${formHtml}</div>
     </div>
@@ -674,11 +679,11 @@ function renderCTA(variant, { h2s, ctas, heroBg, ctaImg }) {
     return `
 <section class="cta-banner" style="${bg ? `background-image:linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,.50)),url(${bg});background-size:cover;background-position:center` : ''}">
   <div class="container">
-    <h2>${title}</h2>
+    <h2>${esc(title)}</h2>
     <p class="cta-banner__sub">Rejoignez-nous et profitez de tous nos services dès aujourd'hui.</p>
     <div class="hero__ctas">
-      ${cta1 ? `<a href="#" class="btn btn--white">${cta1.text}</a>` : ''}
-      ${cta2 ? `<a href="#" class="btn btn--outline-white">${cta2.text}</a>` : ''}
+      ${cta1 ? `<a href="#" class="btn btn--white">${esc(cta1.text)}</a>` : ''}
+      ${cta2 ? `<a href="#" class="btn btn--outline-white">${esc(cta2.text)}</a>` : ''}
     </div>
   </div>
 </section>`;
@@ -689,12 +694,12 @@ function renderCTA(variant, { h2s, ctas, heroBg, ctaImg }) {
 <section class="cta-banner cta-banner--split" style="${bg ? `background-image:linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,.50)),url(${bg});background-size:cover;background-position:center` : ''}">
   <div class="container cta-split__inner">
     <div class="cta-split__text">
-      <h2>${title}</h2>
+      <h2>${esc(title)}</h2>
       <p>Rejoignez-nous et profitez de tous nos services dès aujourd'hui.</p>
     </div>
     <div class="cta-split__actions">
-      ${cta1 ? `<a href="#" class="btn btn--white btn--lg">${cta1.text}</a>` : ''}
-      ${cta2 ? `<a href="#" class="btn btn--outline-white btn--lg">${cta2.text}</a>` : ''}
+      ${cta1 ? `<a href="#" class="btn btn--white btn--lg">${esc(cta1.text)}</a>` : ''}
+      ${cta2 ? `<a href="#" class="btn btn--outline-white btn--lg">${esc(cta2.text)}</a>` : ''}
     </div>
   </div>
 </section>`;
@@ -746,7 +751,7 @@ function renderTopbar({ current }) {
   return `
 <div class="mockup-topbar">
   <span class="mockup-topbar__badge">MOCKUP</span>
-  <span class="mockup-topbar__page">Page : <strong>${current}</strong></span>
+  <span class="mockup-topbar__page">Page : <strong>${esc(current)}</strong></span>
   <a class="mockup-topbar__link" href="_apercu.html">☰ Toutes les pages</a>
 </div>`;
 }
@@ -759,7 +764,7 @@ function renderHeader({ nav, logo, assetsRelPath, current }) {
   const links = nav.slice(0, 8).map(n => {
     const slug   = n.href.replace(/.*\//, '').replace(/\/$/, '') || 'index';
     const active = slug === current ? ' class="active"' : '';
-    return `<a href="${slug}.html"${active}>${n.text}</a>`;
+    return `<a href="${esc(slug)}.html"${active}>${esc(n.text)}</a>`;
   }).join('');
 
   return `
@@ -779,10 +784,10 @@ function renderFooter({ page, design }) {
 <footer class="footer">
   <div class="container footer__inner">
     <div class="footer__copy">
-      ${footerItems.slice(0, 6).map(t => `<p>${t}</p>`).join('')}
+      ${footerItems.slice(0, 6).map(t => `<p>${esc(t)}</p>`).join('')}
     </div>
     <div class="footer__links">
-      ${footerItems.slice(6).map(t => `<span>${t}</span>`).join(' · ')}
+      ${footerItems.slice(6).map(t => `<span>${esc(t)}</span>`).join(' · ')}
     </div>
   </div>
 </footer>`;

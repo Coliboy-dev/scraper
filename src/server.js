@@ -11,27 +11,29 @@ import { generateVariants, variantsExist, getVariantTheme } from './modules/vari
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
 
-// ── Résolution robuste du path Windows, quel que soit le shell ───────────────
-// Git Bash / WSL donnent des paths Unix (/c/Users/…) que Playwright ne comprend pas.
-// On interroge cmd.exe directement pour avoir le vrai chemin Windows.
-function getWindowsLocalAppData() {
-  // 1. LOCALAPPDATA déjà présent et valide (PowerShell, CMD)
+// ── Résolution du path Playwright selon la plateforme ────────────────────────
+// Sur Linux/Mac Playwright trouve ses binaires seul via son mécanisme interne.
+// Sur Windows, Git Bash / WSL donnent des paths Unix (/c/Users/…) incompatibles.
+function resolvePlaywrightBrowsersPath() {
+  if (process.platform !== 'win32') return undefined;
+
   if (process.env.LOCALAPPDATA && /^[A-Za-z]:/.test(process.env.LOCALAPPDATA)) {
-    return process.env.LOCALAPPDATA;
+    return path.win32.join(process.env.LOCALAPPDATA, 'ms-playwright');
   }
-  // 2. Demander à cmd.exe (fonctionne depuis Git Bash, WSL, VSCode terminal)
   try {
     const result = execSync('cmd /c echo %LOCALAPPDATA%', { encoding: 'utf8' }).trim();
-    if (result && /^[A-Za-z]:/.test(result)) return result;
+    if (result && /^[A-Za-z]:/.test(result)) {
+      return path.win32.join(result, 'ms-playwright');
+    }
   } catch {}
-  // 3. Fallback : reconstruire depuis USERPROFILE ou homedir
-  const profile = process.env.USERPROFILE || os.homedir().replace(/^\/([a-z])\//i, '$1:\\').replace(/\//g, '\\');
-  return path.win32.join(profile, 'AppData', 'Local');
+  const profile = process.env.USERPROFILE || os.homedir();
+  return path.win32.join(profile, 'AppData', 'Local', 'ms-playwright');
 }
 
-const WINDOWS_LOCALAPPDATA   = getWindowsLocalAppData();
-const PLAYWRIGHT_BROWSERS_PATH = path.win32.join(WINDOWS_LOCALAPPDATA, 'ms-playwright');
-console.log(`[server] PLAYWRIGHT_BROWSERS_PATH → ${PLAYWRIGHT_BROWSERS_PATH}`);
+const PLAYWRIGHT_BROWSERS_PATH = resolvePlaywrightBrowsersPath();
+if (PLAYWRIGHT_BROWSERS_PATH) {
+  console.log(`[server] PLAYWRIGHT_BROWSERS_PATH → ${PLAYWRIGHT_BROWSERS_PATH}`);
+}
 
 const app = express();
 app.use(express.json());
@@ -46,11 +48,40 @@ function stripAnsi(str) {
   return str.replace(ANSI_RE, '');
 }
 
+// ── Validation des entrées utilisateur ───────────────────────────────────────
+
+function safeDomain(domain) {
+  if (!domain || typeof domain !== 'string') throw new Error('Domaine invalide');
+  if (/[/\\]/.test(domain) || domain.includes('..') || domain.startsWith('.')) {
+    throw new Error('Domaine invalide');
+  }
+  if (domain.length > 253) throw new Error('Domaine trop long');
+  return domain;
+}
+
+function validateUrl(raw) {
+  let u;
+  try { u = new URL(raw); } catch { throw new Error('URL invalide'); }
+  if (!['http:', 'https:'].includes(u.protocol)) {
+    throw new Error('Protocole non autorisé (http/https uniquement)');
+  }
+  const host = u.hostname;
+  if (/^(localhost$|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|0\.0\.0\.0$|::1$)/i.test(host)) {
+    throw new Error('Adresse réseau interne non autorisée');
+  }
+  return u.href;
+}
+
 // POST /api/scrape — lance un job
 app.post('/api/scrape', (req, res) => {
-  const { url, depth = 1, screenshots = true, zip = true } = req.body;
+  const { screenshots = true, zip = true } = req.body;
+  const depth = Math.max(1, Math.min(parseInt(req.body.depth) || 1, 5));
 
-  if (!url) return res.status(400).json({ error: 'URL requise' });
+  if (!req.body.url) return res.status(400).json({ error: 'URL requise' });
+
+  let url;
+  try { url = validateUrl(req.body.url); }
+  catch (e) { return res.status(400).json({ error: e.message }); }
 
   const jobId = String(++jobCounter);
   const args = ['src/index.js', url, `--depth=${depth}`];
@@ -84,6 +115,7 @@ app.post('/api/scrape', (req, res) => {
   const handleLine = (line) => {
     const clean = stripAnsi(line);
     if (!clean.trim()) return;
+    if (job.lines.length >= 500) job.lines.shift();
     job.lines.push(clean);
     broadcast('log', { line: clean });
   };
@@ -136,11 +168,13 @@ app.post('/api/scrape', (req, res) => {
         broadcast('done', { status: job.status, exitCode: code, domain: job.domain, mockupReady: job.mockupReady });
         job.clients.forEach(client => client.end());
         job.clients.clear();
+        setTimeout(() => jobs.delete(jobId), 30 * 60 * 1000);
       });
     } else {
       broadcast('done', { status: job.status, exitCode: code, domain: job.domain, mockupReady: false });
       job.clients.forEach(client => client.end());
       job.clients.clear();
+      setTimeout(() => jobs.delete(jobId), 30 * 60 * 1000);
     }
   });
 
@@ -198,61 +232,68 @@ app.get('/api/history', async (_req, res) => {
 
 // GET /api/report/:domain — contenu de report.md
 app.get('/api/report/:domain', async (req, res) => {
-  const p = path.join(ROOT, 'output', req.params.domain, 'analysis', 'report.md');
   try {
+    const domain = safeDomain(req.params.domain);
+    const p = path.join(ROOT, 'output', domain, 'analysis', 'report.md');
     const content = await readFile(p, 'utf8');
     res.json({ content });
-  } catch {
-    res.status(404).json({ error: 'Rapport introuvable' });
+  } catch (e) {
+    res.status(e.message === 'Domaine invalide' ? 400 : 404).json({ error: e.message || 'Rapport introuvable' });
   }
 });
 
 // GET /api/report/:domain/download — télécharge report.md
 app.get('/api/report/:domain/download', async (req, res) => {
-  const p = path.join(ROOT, 'output', req.params.domain, 'analysis', 'report.md');
   try {
-    res.download(p, `report-${req.params.domain}.md`);
-  } catch {
-    res.status(404).json({ error: 'Rapport introuvable' });
+    const domain = safeDomain(req.params.domain);
+    const p = path.join(ROOT, 'output', domain, 'analysis', 'report.md');
+    res.download(p, `report-${domain}.md`);
+  } catch (e) {
+    res.status(e.message === 'Domaine invalide' ? 400 : 404).json({ error: e.message || 'Rapport introuvable' });
   }
 });
 
 // GET /api/audit-prompt/:domain — génère le prompt synthétique d'audit
 app.get('/api/audit-prompt/:domain', async (req, res) => {
-  const analysisDir = path.join(ROOT, 'output', req.params.domain, 'analysis');
   try {
-    const prompt = await buildAuditPrompt(req.params.domain, analysisDir, { readFile });
+    const domain = safeDomain(req.params.domain);
+    const analysisDir = path.join(ROOT, 'output', domain, 'analysis');
+    const prompt = await buildAuditPrompt(domain, analysisDir, { readFile });
     res.json({ content: prompt });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    res.status(e.message === 'Domaine invalide' ? 400 : 500).json({ error: e.message });
   }
 });
 
 // POST /api/theme/:domain — sauvegarde le theme.json dans le dossier mockup
 app.post('/api/theme/:domain', async (req, res) => {
-  const dir = path.join(ROOT, 'output', req.params.domain, 'mockup');
   try {
+    const domain = safeDomain(req.params.domain);
+    const dir = path.join(ROOT, 'output', domain, 'mockup');
     await writeFile(path.join(dir, 'theme.json'), JSON.stringify(req.body, null, 2));
     res.json({ ok: true });
-  } catch {
-    res.status(500).json({ error: 'Impossible de sauvegarder' });
+  } catch (e) {
+    res.status(e.message === 'Domaine invalide' ? 400 : 500).json({ error: e.message || 'Impossible de sauvegarder' });
   }
 });
 
 // GET /api/theme/:domain — charge le theme.json sauvegardé
 app.get('/api/theme/:domain', async (req, res) => {
-  const p = path.join(ROOT, 'output', req.params.domain, 'mockup', 'theme.json');
   try {
+    const domain = safeDomain(req.params.domain);
+    const p = path.join(ROOT, 'output', domain, 'mockup', 'theme.json');
     const content = await readFile(p, 'utf8');
     res.json(JSON.parse(content));
-  } catch {
-    res.status(404).json({ error: 'Thème introuvable' });
+  } catch (e) {
+    res.status(e.message === 'Domaine invalide' ? 400 : 404).json({ error: e.message || 'Thème introuvable' });
   }
 });
 
 // GET /api/cross-theme/:domain — extrait thème depuis un domaine scrapé
 app.get('/api/cross-theme/:domain', async (req, res) => {
-  const domain = req.params.domain;
+  let domain;
+  try { domain = safeDomain(req.params.domain); }
+  catch (e) { return res.status(400).json({ error: e.message }); }
 
   // 1. Thème sauvegardé depuis le Studio
   try {
@@ -297,7 +338,10 @@ app.get('/api/cross-theme/:domain', async (req, res) => {
 
 // POST /api/variants/:domain — génère les 3 variantes
 app.post('/api/variants/:domain', async (req, res) => {
-  const domain = req.params.domain;
+  let domain;
+  try { domain = safeDomain(req.params.domain); }
+  catch (e) { return res.status(400).json({ error: e.message }); }
+
   const outputDir = path.join(ROOT, 'output', domain);
   if (!existsSync(path.join(outputDir, 'mockup', 'index.html'))) {
     return res.status(404).json({ error: 'Mockup introuvable — génère-le d\'abord.' });
@@ -312,7 +356,11 @@ app.post('/api/variants/:domain', async (req, res) => {
 
 // GET /api/variants/:domain — liste les variantes existantes
 app.get('/api/variants/:domain', (req, res) => {
-  const outputDir = path.join(ROOT, 'output', req.params.domain);
+  let domain;
+  try { domain = safeDomain(req.params.domain); }
+  catch (e) { return res.status(400).json({ error: e.message }); }
+
+  const outputDir = path.join(ROOT, 'output', domain);
   const exists = variantsExist(outputDir);
   res.json({ exists, variants: exists ? ['a', 'b', 'c'] : [] });
 });
@@ -325,8 +373,11 @@ app.get('/api/variant-theme/:domain/:id', (req, res) => {
 });
 
 // GET /compare/:domain — page de comparaison variantes A/B/C
-app.get('/compare/:domain', (_req, res) => {
-  res.sendFile(path.join(ROOT, 'output', _req.params.domain, 'mockup', 'compare.html'));
+app.get('/compare/:domain', (req, res) => {
+  let domain;
+  try { domain = safeDomain(req.params.domain); }
+  catch (e) { return res.status(400).send('Domaine invalide'); }
+  res.sendFile(path.join(ROOT, 'output', domain, 'mockup', 'compare.html'));
 });
 
 // GET /studio/:domain — Mockup Designer Studio (single domain)
@@ -341,22 +392,31 @@ app.get('/compare-studio/:ref/:client', (_req, res) => {
 
 // GET /api/compare-data/:ref/:client — données des deux domaines pour le studio comparatif
 app.get('/api/compare-data/:ref/:client', async (req, res) => {
-  const { ref, client } = req.params;
-  const load = async (domain, file) => {
+  let ref, client;
+  try {
+    ref    = safeDomain(req.params.ref);
+    client = safeDomain(req.params.client);
+  } catch (e) { return res.status(400).json({ error: e.message }); }
+
+  const loadAnalysis = async (domain, file) => {
     try { return JSON.parse(await readFile(path.join(ROOT, 'output', domain, 'analysis', file), 'utf8')); }
+    catch { return {}; }
+  };
+  const loadTheme = async (domain) => {
+    try { return JSON.parse(await readFile(path.join(ROOT, 'output', domain, 'mockup', 'theme.json'), 'utf8')); }
     catch { return {}; }
   };
   const hasMockup = (domain) => existsSync(path.join(ROOT, 'output', domain, 'mockup', 'index.html'));
 
   const [refDesign, refSitemap, refSections, clientDesign, clientSitemap, clientSections, clientTheme] =
     await Promise.all([
-      load(ref,    'design-system.json'),
-      load(ref,    'sitemap.json'),
-      load(ref,    'sections.json'),
-      load(client, 'design-system.json'),
-      load(client, 'sitemap.json'),
-      load(client, 'sections.json'),
-      load(client, path.join('..', 'mockup', 'theme.json')),  // saved theme if any
+      loadAnalysis(ref,    'design-system.json'),
+      loadAnalysis(ref,    'sitemap.json'),
+      loadAnalysis(ref,    'sections.json'),
+      loadAnalysis(client, 'design-system.json'),
+      loadAnalysis(client, 'sitemap.json'),
+      loadAnalysis(client, 'sections.json'),
+      loadTheme(client),
     ]);
 
   res.json({
@@ -367,19 +427,21 @@ app.get('/api/compare-data/:ref/:client', async (req, res) => {
 
 // GET /api/sitemap/:domain — retourne sitemap.json
 app.get('/api/sitemap/:domain', async (req, res) => {
-  const p = path.join(ROOT, 'output', req.params.domain, 'analysis', 'sitemap.json');
   try {
+    const domain = safeDomain(req.params.domain);
+    const p = path.join(ROOT, 'output', domain, 'analysis', 'sitemap.json');
     const content = await readFile(p, 'utf8');
     res.json(JSON.parse(content));
-  } catch {
-    res.status(404).json({ error: 'Sitemap introuvable' });
+  } catch (e) {
+    res.status(e.message === 'Domaine invalide' ? 400 : 404).json({ error: e.message || 'Sitemap introuvable' });
   }
 });
 
 // POST /api/mockup — génère le mockup HTML pour un domaine déjà scrapé
 app.post('/api/mockup', (req, res) => {
-  const { domain } = req.body;
-  if (!domain) return res.status(400).json({ error: 'Domain requis' });
+  let domain;
+  try { domain = safeDomain(req.body.domain); }
+  catch (e) { return res.status(400).json({ error: e.message || 'Domain requis' }); }
 
   const child = spawn('node', ['src/mockup.js', domain], { cwd: ROOT });
   let out = '';
