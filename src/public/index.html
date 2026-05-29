@@ -774,6 +774,16 @@
           btnMockup.href = '#';
         }
         actions.appendChild(btnMockup);
+
+        // Bouton OS si configuré
+        if (getOsUrl()) {
+          const btnOs = document.createElement('button');
+          btnOs.id = 'btn-send-os';
+          btnOs.className = 'btn-xs';
+          btnOs.textContent = '⬆ Envoyer vers l\'OS';
+          btnOs.onclick = () => sendToOs(currentDomain);
+          actions.appendChild(btnOs);
+        }
       }
     } else {
       resultCard.className = 'result-card error';
@@ -1011,6 +1021,42 @@
     if (secret) localStorage.setItem('wrs_os_secret', secret); else localStorage.removeItem('wrs_os_secret');
     updateOsBadge();
     document.getElementById('os-settings-panel').classList.remove('open');
+  }
+
+  // ── Send to OS ───────────────────────────────────────────────────────
+  function sendToOs(domain) {
+    const osUrl = getOsUrl();
+    if (!osUrl) { openOsSettings(); return; }
+    const btn = document.getElementById('btn-send-os');
+    btn.textContent = '⏳ Envoi…';
+    btn.disabled = true;
+    fetch(`/api/send-to-os/${encodeURIComponent(domain)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        os_url:      osUrl,
+        os_secret:   getOsSecret(),
+        prospect_id: window._wrsProspectId || null,
+        project_id:  window._wrsProjectId  || null,
+        client:      window._wrsClient || domain,
+      }),
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.succes) {
+        btn.textContent = '✓ Envoyé vers l\'OS';
+        btn.className = 'btn-xs green';
+      } else {
+        btn.textContent = '✗ ' + (data.error || 'Erreur');
+        btn.disabled = false;
+        setTimeout(() => { btn.textContent = '⬆ Envoyer vers l\'OS'; btn.disabled = false; }, 4000);
+      }
+    })
+    .catch(() => {
+      btn.textContent = '✗ Erreur réseau';
+      btn.disabled = false;
+      setTimeout(() => { btn.textContent = '⬆ Envoyer vers l\'OS'; btn.disabled = false; }, 4000);
+    });
   }
 
   // Enter key on URL input

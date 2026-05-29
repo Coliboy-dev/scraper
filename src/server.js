@@ -7,6 +7,8 @@ import { readdir, readFile, writeFile, stat } from 'fs/promises';
 import { existsSync } from 'fs';
 import { buildAuditPrompt } from './modules/build-audit-prompt.js';
 import { generateVariants, variantsExist, getVariantTheme } from './modules/variants.js';
+import { calculerScores, extrairePointsForts, extrairePointsFaibles, extraireRecommandations } from './modules/scores.js';
+import { genererClaudeMd, genererMissionMd } from './modules/handoff-docs.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
@@ -454,6 +456,135 @@ app.post('/api/mockup', (req, res) => {
       res.status(500).json({ error: out.slice(-300) });
     }
   });
+});
+
+// GET /api/analysis/:domain — toutes les données JSON d'analyse pour un domaine
+app.get('/api/analysis/:domain', async (req, res) => {
+  try {
+    const domain = safeDomain(req.params.domain);
+    const analysisDir = path.join(ROOT, 'output', domain, 'analysis');
+    const readJson = async (file) => {
+      try { return JSON.parse(await readFile(path.join(analysisDir, file), 'utf8')); }
+      catch { return null; }
+    };
+    const [audit, design, content, sitemap, sections] = await Promise.all([
+      readJson('audit.json'),
+      readJson('design-system.json'),
+      readJson('content.json'),
+      readJson('sitemap.json'),
+      readJson('sections.json'),
+    ]);
+    if (!audit) return res.status(404).json({ error: 'Données d\'analyse introuvables pour ce domaine' });
+    res.json({ audit, design, content, sitemap, sections });
+  } catch (e) {
+    res.status(e.message === 'Domaine invalide' ? 400 : 500).json({ error: e.message });
+  }
+});
+
+// POST /api/send-to-os/:domain — calcule scores, génère docs, envoie vers l'OS
+app.post('/api/send-to-os/:domain', async (req, res) => {
+  let domain;
+  try { domain = safeDomain(req.params.domain); }
+  catch (e) { return res.status(400).json({ error: e.message }); }
+
+  const { os_url, os_secret, prospect_id, project_id, client } = req.body;
+
+  let parsedOsUrl;
+  try {
+    parsedOsUrl = new URL(os_url);
+    if (!['http:', 'https:'].includes(parsedOsUrl.protocol)) throw new Error();
+  } catch {
+    return res.status(400).json({ error: 'URL OS invalide (http/https requis)' });
+  }
+  const osBase = parsedOsUrl.href.replace(/\/$/, '');
+
+  const analysisDir = path.join(ROOT, 'output', domain, 'analysis');
+  const readJson = async (file) => {
+    try { return JSON.parse(await readFile(path.join(analysisDir, file), 'utf8')); }
+    catch { return null; }
+  };
+
+  const [audit, design, content, sitemap, sections] = await Promise.all([
+    readJson('audit.json'),
+    readJson('design-system.json'),
+    readJson('content.json'),
+    readJson('sitemap.json'),
+    readJson('sections.json'),
+  ]);
+
+  if (!audit) return res.status(404).json({ error: 'Données d\'analyse introuvables — scrapez ce site d\'abord' });
+
+  const scores        = calculerScores({ audit, content: content || {}, design: design || {}, sitemap: sitemap || [] });
+  const points_forts  = extrairePointsForts(scores, audit);
+  const points_faibles = extrairePointsFaibles(scores, audit);
+  const recommandations = extraireRecommandations(audit);
+  const claude_md     = genererClaudeMd(domain, { audit, design: design || {}, content: content || {}, sitemap: sitemap || [], sections: sections || [] });
+  const mission_md    = genererMissionMd(domain, client || domain, { audit, design: design || {}, content: content || {}, scores });
+
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(os_secret ? { 'x-wrs-secret': os_secret } : {}),
+  };
+
+  const results = {};
+
+  // POST /api/audits
+  const auditPayload = {
+    prospect_id:    prospect_id || null,
+    url_site:       `https://${domain}`,
+    ...scores,
+    points_forts,
+    points_faibles,
+    recommandations,
+    rapport_json: {
+      audit,
+      design_tokens: design || {},
+      sections:      sections || [],
+      content_summary: content || {},
+    },
+  };
+
+  try {
+    const r = await fetch(`${osBase}/api/audits`, { method: 'POST', headers, body: JSON.stringify(auditPayload) });
+    results.audit = { ok: r.ok, status: r.status };
+    if (!r.ok) {
+      const text = await r.text().catch(() => '');
+      return res.status(502).json({ error: `Erreur OS (${r.status}) : ${text.slice(0, 200)}`, results });
+    }
+  } catch (e) {
+    return res.status(502).json({ error: `Impossible de joindre l'OS : ${e.message}` });
+  }
+
+  // POST /api/projects/:project_id/handoff (si project_id fourni)
+  if (project_id) {
+    const handoffPayload = {
+      design_tokens: {
+        colors:        (design || {}).colors      || {},
+        typography:    (design || {}).typography  || {},
+        cssVariables:  (design || {}).cssVars     || {},
+      },
+      sections: sections || [],
+      seo: {
+        framework:       audit.framework,
+        cms:             audit.cms,
+        features:        audit.features || [],
+        complexity:      audit.complexity,
+        recommendations: recommandations,
+      },
+      claude_md,
+      mission_md,
+    };
+    try {
+      const r = await fetch(`${osBase}/api/projects/${encodeURIComponent(project_id)}/handoff`, {
+        method: 'POST', headers, body: JSON.stringify(handoffPayload),
+      });
+      results.handoff = { ok: r.ok, status: r.status };
+    } catch (e) {
+      results.handoff = { ok: false, error: e.message };
+    }
+  }
+
+  res.json({ succes: true, results });
 });
 
 const PORT = process.env.PORT || 3456;
