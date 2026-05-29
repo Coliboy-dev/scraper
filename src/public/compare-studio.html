@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Design Studio Comparatif</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #0d0f1a;
+      --surface: #141720;
+      --border:  #1e2235;
+      --border2: #2a3050;
+      --text:    #e2e8f0;
+      --muted:   #64748b;
+      --accent:  #6c8ef5;
+      --accent2: #22c55e;
+      --warn:    #f59e0b;
+      --danger:  #ef4444;
+      --bar-h:   52px;
+      --panel-w: 300px;
+    }
+
+    html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px; }
+
+    /* ── Top bar ─────────────────────────────────────────────────────────── */
+    #topbar {
+      height: var(--bar-h); background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px; padding: 0 16px;
+      flex-shrink: 0; z-index: 100;
+    }
+    #topbar h1 { font-size: 13px; font-weight: 700; color: var(--text); white-space: nowrap; }
+    #topbar h1 span { color: var(--accent); }
+    .tb-sep { width: 1px; height: 24px; background: var(--border2); flex-shrink: 0; }
+    .tb-domain { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+    .tb-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .tb-dot--ref    { background: var(--warn); }
+    .tb-dot--client { background: var(--accent2); }
+    .tb-name { color: var(--muted); }
+    .tb-name strong { color: var(--text); font-weight: 600; }
+    #tb-actions { margin-left: auto; display: flex; gap: 8px; }
+    .tb-btn {
+      padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600;
+      border: 1px solid var(--border2); background: var(--surface); color: var(--muted);
+      cursor: pointer; transition: all .15s; white-space: nowrap;
+    }
+    .tb-btn:hover { border-color: var(--accent); color: var(--text); }
+    .tb-btn--primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .tb-btn--primary:hover { background: #5b7de0; }
+    .tb-btn--success { background: var(--accent2); border-color: var(--accent2); color: #fff; }
+    .tb-btn--success:hover { background: #16a34a; }
+
+    /* ── Layout ──────────────────────────────────────────────────────────── */
+    #layout {
+      display: flex;
+      height: calc(100vh - var(--bar-h));
+    }
+
+    /* ── Transfer panel (center) ─────────────────────────────────────────── */
+    #transfer-panel {
+      width: var(--panel-w); flex-shrink: 0;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+    #tp-header {
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    #tp-header h2 { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+    #tp-header p  { font-size: 10px; color: var(--muted); line-height: 1.4; }
+
+    #tp-tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .tp-tab {
+      flex: 1; padding: 8px 4px; background: none; border: none;
+      color: var(--muted); font-size: 10px; font-weight: 700; cursor: pointer;
+      border-bottom: 2px solid transparent; transition: all .15s;
+      text-transform: uppercase; letter-spacing: .04em;
+    }
+    .tp-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    #tp-body { flex: 1; overflow-y: auto; padding: 12px 14px; }
+    #tp-body::-webkit-scrollbar { width: 3px; }
+    #tp-body::-webkit-scrollbar-thumb { background: var(--border2); }
+
+    .tp-section { display: none; }
+    .tp-section.active { display: block; }
+
+    /* ── Color swatches ──────────────────────────────────────────────────── */
+    .cs-group { margin-bottom: 16px; }
+    .cs-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; font-weight: 700; }
+    .cs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .cs-item {
+      border-radius: 6px; overflow: hidden; border: 1px solid var(--border2);
+      cursor: pointer; transition: border-color .15s, transform .15s;
+    }
+    .cs-item:hover { border-color: var(--accent); transform: scale(1.02); }
+    .cs-swatch { height: 32px; }
+    .cs-info { padding: 4px 6px; background: #111520; }
+    .cs-role  { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+    .cs-val   { font-size: 10px; color: var(--text); font-weight: 600; font-family: monospace; }
+
+    .color-pair {
+      display: flex; align-items: stretch; border: 1px solid var(--border2);
+      border-radius: 6px; overflow: hidden; margin-bottom: 6px;
+      cursor: pointer; transition: border-color .15s;
+    }
+    .color-pair:hover { border-color: var(--accent); }
+    .color-pair__ref, .color-pair__client { flex: 1; }
+    .color-pair__swatch { height: 28px; }
+    .color-pair__info { padding: 3px 6px; font-size: 9px; }
+    .color-pair__role { color: var(--muted); font-size: 9px; }
+    .color-pair__val  { color: var(--text); font-size: 10px; font-family: monospace; font-weight: 600; }
+    .color-pair__arrow { display: flex; align-items: center; padding: 0 4px; color: var(--accent); font-size: 12px; flex-shrink: 0; background: #0d0f1a; }
+    .color-pair.transferred { border-color: var(--accent2); }
+    .color-pair.transferred .color-pair__arrow { color: var(--accent2); }
+
+    /* ── Font rows ───────────────────────────────────────────────────────── */
+    .font-row {
+      display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+      border: 1px solid var(--border2); border-radius: 6px; margin-bottom: 6px;
+      cursor: pointer; transition: border-color .15s;
+    }
+    .font-row:hover { border-color: var(--accent); }
+    .font-row__preview { font-size: 18px; font-weight: 700; flex: 1; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .font-row__name { font-size: 10px; color: var(--muted); }
+    .font-row__role { font-size: 9px; color: var(--accent); text-transform: uppercase; font-weight: 700; }
+    .font-row__apply { font-size: 10px; color: var(--accent); font-weight: 600; padding: 3px 8px; border: 1px solid var(--accent); border-radius: 4px; flex-shrink: 0; }
+    .font-row.transferred { border-color: var(--accent2); }
+    .font-row.transferred .font-row__apply { color: var(--accent2); border-color: var(--accent2); content: '✓'; }
+
+    /* ── Sections list ───────────────────────────────────────────────────── */
+    .sec-item {
+      display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+      border: 1px solid var(--border2); border-radius: 6px; margin-bottom: 6px;
+    }
+    .sec-item__icon { font-size: 14px; width: 20px; text-align: center; flex-shrink: 0; }
+    .sec-item__label { flex: 1; font-size: 12px; font-weight: 600; }
+    .sec-item__conf { font-size: 10px; color: var(--muted); }
+    .sec-item--ref    { border-color: rgba(245,158,11,.3); background: rgba(245,158,11,.04); }
+    .sec-item--client { border-color: rgba(34,197,94,.3); background: rgba(34,197,94,.04); }
+    .sec-item--both   { border-color: var(--border2); }
+    .sec-item--missing { border-color: rgba(239,68,68,.3); background: rgba(239,68,68,.04); }
+    .sec-badge { font-size: 9px; padding: 2px 6px; border-radius: 999px; font-weight: 700; flex-shrink: 0; }
+    .sec-badge--ref    { background: rgba(245,158,11,.2); color: var(--warn); }
+    .sec-badge--both   { background: rgba(34,197,94,.2); color: var(--accent2); }
+    .sec-badge--missing { background: rgba(239,68,68,.2); color: var(--danger); }
+
+    /* ── Transfer footer ─────────────────────────────────────────────────── */
+    #tp-footer {
+      padding: 12px 14px; border-top: 1px solid var(--border);
+      display: flex; flex-direction: column; gap: 6px; flex-shrink: 0;
+    }
+    #btn-transfer-all {
+      width: 100%; padding: 10px; background: var(--accent); border: none;
+      border-radius: 6px; color: #fff; font-size: 12px; font-weight: 700;
+      cursor: pointer; transition: background .15s;
+    }
+    #btn-transfer-all:hover { background: #5b7de0; }
+    #btn-save-client {
+      width: 100%; padding: 8px; background: var(--surface); border: 1px solid var(--accent2);
+      border-radius: 6px; color: var(--accent2); font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: all .15s;
+    }
+    #btn-save-client:hover { background: rgba(34,197,94,.1); }
+    #tp-status { font-size: 10px; color: var(--muted); text-align: center; min-height: 14px; }
+    #tp-status.ok   { color: var(--accent2); }
+    #tp-status.err  { color: var(--danger); }
+
+    /* ── Iframes ─────────────────────────────────────────────────────────── */
+    .pane {
+      flex: 1; display: flex; flex-direction: column; min-width: 0;
+      overflow: hidden;
+    }
+    .pane__bar {
+      height: 36px; display: flex; align-items: center; gap: 8px;
+      padding: 0 12px; flex-shrink: 0; border-bottom: 1px solid var(--border);
+    }
+    .pane--ref    .pane__bar { background: rgba(245,158,11,.06); }
+    .pane--client .pane__bar { background: rgba(34,197,94,.06); }
+    .pane__dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .pane--ref    .pane__dot { background: var(--warn); }
+    .pane--client .pane__dot { background: var(--accent2); }
+    .pane__label { font-size: 11px; font-weight: 700; }
+    .pane--ref    .pane__label { color: var(--warn); }
+    .pane--client .pane__label { color: var(--accent2); }
+    .pane__domain { font-size: 11px; color: var(--muted); }
+
+    .pane__nav { display: flex; gap: 4px; margin-left: auto; }
+    .pane__nav-btn {
+      padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 600;
+      background: var(--surface); border: 1px solid var(--border2); color: var(--muted);
+      cursor: pointer; transition: all .15s; white-space: nowrap;
+    }
+    .pane__nav-btn:hover { border-color: var(--accent); color: var(--text); }
+    .pane__nav-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(108,142,245,.1); }
+
+    .pane__frame { flex: 1; border: none; background: #fff; }
+
+    /* ── Overlay "En cours" ──────────────────────────────────────────────── */
+    #loading-overlay {
+      position: fixed; inset: 0; background: var(--bg);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 9999; gap: 16px;
+    }
+    #loading-overlay.hidden { display: none; }
+    .spinner { width: 36px; height: 36px; border: 3px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #loading-overlay p { color: var(--muted); font-size: 13px; }
+
+    /* ── Divider resize ──────────────────────────────────────────────────── */
+    #divider-left, #divider-right {
+      width: 4px; background: var(--border); cursor: col-resize; flex-shrink: 0;
+      transition: background .15s;
+    }
+    #divider-left:hover, #divider-right:hover { background: var(--accent); }
+
+    /* ── Highlight pulse ─────────────────────────────────────────────────── */
+    @keyframes pulse-border { 0%,100%{opacity:.4} 50%{opacity:1} }
+    .pane--client.transferred-flash .pane__bar { animation: pulse-border .5s ease 2; }
+  </style>
+</head>
+<body>
+
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <p>Chargement du studio comparatif…</p>
+</div>
+
+<!-- Top bar -->
+<div id="topbar">
+  <h1>✏️ <span>Design Studio</span> Comparatif</h1>
+  <div class="tb-sep"></div>
+  <div class="tb-domain">
+    <div class="tb-dot tb-dot--ref"></div>
+    <span class="tb-name">Référence : <strong id="tb-ref-name">—</strong></span>
+  </div>
+  <div class="tb-sep"></div>
+  <div class="tb-domain">
+    <div class="tb-dot tb-dot--client"></div>
+    <span class="tb-name">Client : <strong id="tb-client-name">—</strong></span>
+  </div>
+  <div id="tb-actions">
+    <button class="tb-btn" id="btn-regen">⟳ Régénérer mockup client</button>
+    <button class="tb-btn tb-btn--primary" onclick="window.open('/','_blank')">← App</button>
+  </div>
+</div>
+
+<div id="layout">
+
+  <!-- Référence pane -->
+  <div class="pane pane--ref" id="pane-ref" style="flex:1">
+    <div class="pane__bar">
+      <div class="pane__dot"></div>
+      <span class="pane__label">RÉFÉRENCE</span>
+      <span class="pane__domain" id="ref-domain-label">—</span>
+      <div class="pane__nav" id="ref-nav"></div>
+    </div>
+    <iframe class="pane__frame" id="frame-ref" title="Site référence"></iframe>
+  </div>
+
+  <div id="divider-left"></div>
+
+  <!-- Transfer panel -->
+  <div id="transfer-panel">
+    <div id="tp-header">
+      <h2>🔁 Transfert de design</h2>
+      <p>Clique sur un élément pour l'appliquer au site client.</p>
+    </div>
+
+    <div id="tp-tabs">
+      <button class="tp-tab active" data-tab="colors">🎨 Couleurs</button>
+      <button class="tp-tab" data-tab="fonts">✍️ Polices</button>
+      <button class="tp-tab" data-tab="sections">🗂 Sections</button>
+    </div>
+
+    <div id="tp-body">
+
+      <!-- COULEURS -->
+      <div class="tp-section active" id="tab-colors">
+        <div class="cs-label" style="margin-bottom:10px">Couleurs référence → client<br><span style="color:#4a5568;font-weight:400">Clique sur une paire pour transférer</span></div>
+        <div id="color-pairs"></div>
+      </div>
+
+      <!-- POLICES -->
+      <div class="tp-section" id="tab-fonts">
+        <div class="cs-label" style="margin-bottom:10px">Polices référence → client</div>
+        <div id="font-rows"></div>
+      </div>
+
+      <!-- SECTIONS -->
+      <div class="tp-section" id="tab-sections">
+        <div class="cs-label" style="margin-bottom:6px">Comparaison des sections</div>
+        <div id="sections-compare"></div>
+      </div>
+
+    </div>
+
+    <div id="tp-footer">
+      <button id="btn-transfer-all">⬇ Tout transférer (couleurs + polices)</button>
+      <button id="btn-save-client">💾 Sauvegarder le thème client</button>
+      <div id="tp-status"></div>
+    </div>
+  </div>
+
+  <div id="divider-right"></div>
+
+  <!-- Client pane -->
+  <div class="pane pane--client" id="pane-client" style="flex:1">
+    <div class="pane__bar">
+      <div class="pane__dot"></div>
+      <span class="pane__label">CLIENT</span>
+      <span class="pane__domain" id="client-domain-label">—</span>
+      <div class="pane__nav" id="client-nav"></div>
+    </div>
+    <iframe class="pane__frame" id="frame-client" title="Site client (éditable)" allow="same-origin"></iframe>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  // ── Parse URL params ───────────────────────────────────────────────────────
+  const parts  = location.pathname.split('/');
+  const refDomain    = parts[2] || '';
+  const clientDomain = parts[3] || '';
+
+  if (!refDomain || !clientDomain) {
+    document.getElementById('loading-overlay').querySelector('p').textContent =
+      'URL invalide. Usage : /compare-studio/:ref/:client';
+    return;
+  }
+
+  document.getElementById('tb-ref-name').textContent    = refDomain;
+  document.getElementById('tb-client-name').textContent = clientDomain;
+  document.getElementById('ref-domain-label').textContent    = refDomain;
+  document.getElementById('client-domain-label').textContent = clientDomain;
+
+  const frameRef    = document.getElementById('frame-ref');
+  const frameClient = document.getElementById('frame-client');
+
+  let DATA = null;       // compare-data API response
+  let transferred = {}; // which colors have been transferred
+
+  // ── Load data ──────────────────────────────────────────────────────────────
+  fetch(`/api/compare-data/${refDomain}/${clientDomain}`)
+    .then(r => r.json())
+    .then(data => {
+      DATA = data;
+      buildUI(data);
+      loadFrames(data);
+      document.getElementById('loading-overlay').classList.add('hidden');
+    })
+    .catch(err => {
+      document.getElementById('loading-overlay').querySelector('p').textContent =
+        'Erreur : ' + err.message;
+    });
+
+  // ── Load iframes ────────────────────────────────────────────────────────────
+  function loadFrames(data) {
+    frameRef.src    = `/output/${refDomain}/mockup/index.html`;
+    frameClient.src = `/output/${clientDomain}/mockup/index.html`;
+
+    // Build nav buttons for each pane
+    buildNav('ref-nav',    data.ref.sitemap,    refDomain,    frameRef);
+    buildNav('client-nav', data.client.sitemap, clientDomain, frameClient);
+  }
+
+  function buildNav(containerId, sitemap, domain, frame) {
+    const container = document.getElementById(containerId);
+    if (!container || !sitemap.length) return;
+    sitemap.slice(0, 6).forEach((p, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'pane__nav-btn' + (i === 0 ? ' active' : '');
+      btn.textContent = p.slug === 'index' ? '🏠' : p.slug.replace(/-/g, ' ');
+      btn.title = p.title || p.slug;
+      btn.addEventListener('click', () => {
+        container.querySelectorAll('.pane__nav-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        frame.src = `/output/${domain}/mockup/${p.slug}.html`;
+      });
+      container.appendChild(btn);
+    });
+  }
+
+  // ── Build transfer UI ──────────────────────────────────────────────────────
+  function buildUI(data) {
+    buildColorPairs(data);
+    buildFontRows(data);
+    buildSectionsCompare(data);
+  }
+
+  // ── COLOR PAIRS ────────────────────────────────────────────────────────────
+  const COLOR_LABELS = {
+    primary: 'Primaire', secondary: 'Secondaire', accent: 'Accent / CTA',
+    background: 'Fond page', surface: 'Fond cards', text: 'Texte',
+    muted: 'Texte secondaire', border: 'Bordures',
+  };
+
+  function buildColorPairs(data) {
+    const refColors    = data.ref.design.colors    || {};
+    const clientColors = data.client.design.colors || {};
+    const container = document.getElementById('color-pairs');
+    container.innerHTML = '';
+
+    const roles = ['primary','secondary','accent','background','surface','text','muted','border'];
+    roles.forEach(role => {
+      const rVal = refColors[role];
+      const cVal = clientColors[role];
+      if (!rVal && !cVal) return;
+
+      const pair = document.createElement('div');
+      pair.className = 'color-pair';
+      pair.dataset.role  = role;
+      pair.dataset.rval  = rVal || '#888';
+      pair.dataset.cval  = cVal || '#888';
+      pair.innerHTML = `
+        <div class="color-pair__ref">
+          <div class="color-pair__swatch" style="background:${rVal || '#888'}"></div>
+          <div class="color-pair__info">
+            <div class="color-pair__role">Réf</div>
+            <div class="color-pair__val">${rVal || '—'}</div>
+          </div>
+        </div>
+        <div class="color-pair__arrow">→</div>
+        <div class="color-pair__client">
+          <div class="color-pair__swatch" style="background:${cVal || '#888'}"></div>
+          <div class="color-pair__info">
+            <div class="color-pair__role">${COLOR_LABELS[role] || role}</div>
+            <div class="color-pair__val" id="cpv-${role}">${cVal || '—'}</div>
+          </div>
+        </div>`;
+
+      pair.addEventListener('click', () => transferColor(role, rVal, pair));
+      container.appendChild(pair);
+    });
+  }
+
+  function transferColor(role, value, pairEl) {
+    if (!value) return;
+    // Map role to CSS var name
+    const varMap = {
+      primary:'--color-primary', secondary:'--color-secondary', accent:'--color-accent',
+      background:'--color-background', surface:'--color-surface',
+      text:'--color-text', muted:'--color-muted', border:'--color-border',
+    };
+    const varName = varMap[role];
+    if (!varName) return;
+
+    transferred[role] = value;
+    postToClient('setColors', { [role]: value });
+
+    // Update displayed client color
+    const valEl = document.getElementById('cpv-' + role);
+    if (valEl) valEl.textContent = value;
+
+    // Update swatch
+    const clientSwatch = pairEl.querySelector('.color-pair__client .color-pair__swatch');
+    if (clientSwatch) clientSwatch.style.background = value;
+
+    pairEl.classList.add('transferred');
+    pairEl.querySelector('.color-pair__arrow').textContent = '✓';
+    flashClientPane();
+  }
+
+  // ── FONT ROWS ──────────────────────────────────────────────────────────────
+  function buildFontRows(data) {
+    const refTypo    = data.ref.design.typography    || {};
+    const clientTypo = data.client.design.typography || {};
+    const container = document.getElementById('font-rows');
+    container.innerHTML = '';
+
+    // Extract unique fonts from reference
+    const refFonts = {};
+    const clientFonts = {};
+    const extract = (typo, target) => {
+      Object.values(typo).forEach(v => {
+        if (v.fontFamily) {
+          const clean = v.fontFamily.replace(/['"]/g, '').trim();
+          if (!clean.includes('system') && !clean.includes('sans-serif')) {
+            if (!target[clean]) target[clean] = [];
+            // Which roles use this font
+            Object.entries(typo).forEach(([role, rv]) => {
+              if (rv.fontFamily && rv.fontFamily.replace(/['"]/g,'').trim() === clean) {
+                if (!target[clean].includes(role)) target[clean].push(role);
+              }
+            });
+          }
+        }
+      });
+    };
+    extract(refTypo, refFonts);
+    extract(clientTypo, clientFonts);
+
+    // Reference fonts
+    if (Object.keys(refFonts).length) {
+      const label = document.createElement('div');
+      label.className = 'cs-label';
+      label.style.marginBottom = '6px';
+      label.textContent = 'Polices du site référence';
+      container.appendChild(label);
+    }
+
+    Object.entries(refFonts).forEach(([font, roles]) => {
+      const isHead = roles.some(r => r.startsWith('h'));
+      const isBody = roles.some(r => r === 'p' || r === 'body');
+      const row = document.createElement('div');
+      row.className = 'font-row';
+      row.dataset.font = font;
+      row.dataset.role = isHead ? 'head' : 'body';
+      // Load font for preview
+      loadGFont(font);
+      row.innerHTML = `
+        <div class="font-row__preview" style="font-family:'${font}',sans-serif">${font}</div>
+        <div>
+          <div class="font-row__role">${isHead ? 'Titres' : isBody ? 'Corps' : roles[0]}</div>
+          <div class="font-row__name">${font}</div>
+        </div>
+        <div class="font-row__apply">Appliquer →</div>`;
+      row.addEventListener('click', () => transferFont(font, isHead ? 'head' : 'body', row));
+      container.appendChild(row);
+    });
+
+    // Client current fonts (readonly info)
+    if (Object.keys(clientFonts).length) {
+      const label = document.createElement('div');
+      label.className = 'cs-label';
+      label.style.margin = '14px 0 6px';
+      label.textContent = 'Polices actuelles du client';
+      container.appendChild(label);
+      Object.entries(clientFonts).forEach(([font, roles]) => {
+        const row = document.createElement('div');
+        row.className = 'font-row';
+        row.style.cursor = 'default';
+        row.style.opacity = '.6';
+        loadGFont(font);
+        row.innerHTML = `
+          <div class="font-row__preview" style="font-family:'${font}',sans-serif">${font}</div>
+          <div>
+            <div class="font-row__role">${roles[0]}</div>
+            <div class="font-row__name">${font}</div>
+          </div>
+          <div class="font-row__apply" style="color:#4a5568;border-color:#4a5568">Actuel</div>`;
+        container.appendChild(row);
+      });
+    }
+  }
+
+  function transferFont(fontName, role, rowEl) {
+    const payload = role === 'head'
+      ? { headingFont: fontName }
+      : { bodyFont: fontName };
+    postToClient('setTypography', payload);
+    rowEl.classList.add('transferred');
+    rowEl.querySelector('.font-row__apply').textContent = '✓ Appliqué';
+    flashClientPane();
+  }
+
+  // ── SECTIONS COMPARE ────────────────────────────────────────────────────────
+  function buildSectionsCompare(data) {
+    const container = document.getElementById('sections-compare');
+    container.innerHTML = '';
+
+    // Build sets of section types for each site
+    const refSecs    = flattenSections(data.ref.sections);
+    const clientSecs = flattenSections(data.client.sections);
+    const allTypes = new Set([...Object.keys(refSecs), ...Object.keys(clientSecs)]);
+
+    const ICONS = { hero:'🖼', services:'⚡', about:'👤', testimonials:'💬',
+                    pricing:'💰', faq:'❓', contact:'✉️', cta:'🎯', gallery:'🖼' };
+    const LABELS = { hero:'Hero', services:'Services', about:'À propos',
+                     testimonials:'Témoignages', pricing:'Tarifs', faq:'FAQ',
+                     contact:'Contact', cta:'CTA', gallery:'Galerie' };
+
+    // Sections in both
+    const inBoth = [], refOnly = [], clientOnly = [], missing = [];
+
+    allTypes.forEach(type => {
+      const inRef = !!refSecs[type];
+      const inClient = !!clientSecs[type];
+      if (inRef && inClient) inBoth.push(type);
+      else if (inRef && !inClient) refOnly.push(type);
+      else if (!inRef && inClient) clientOnly.push(type);
+    });
+
+    // Sections présentes sur le ref mais absentes du client = opportunités
+    const addGroup = (title, types, cls, badge, badgeLabel) => {
+      if (!types.length) return;
+      const lbl = document.createElement('div');
+      lbl.className = 'cs-label';
+      lbl.style.margin = '10px 0 6px';
+      lbl.textContent = title;
+      container.appendChild(lbl);
+
+      types.forEach(type => {
+        const item = document.createElement('div');
+        item.className = 'sec-item ' + cls;
+        const conf = refSecs[type]?.confidence || clientSecs[type]?.confidence || 0;
+        item.innerHTML = `
+          <span class="sec-item__icon">${ICONS[type] || '▪'}</span>
+          <span class="sec-item__label">${LABELS[type] || type}</span>
+          ${conf ? `<span class="sec-item__conf">${Math.round(conf*100)}%</span>` : ''}
+          <span class="sec-badge ${badge}">${badgeLabel}</span>`;
+        container.appendChild(item);
+      });
+    };
+
+    addGroup('✅ Présentes sur les deux', inBoth, 'sec-item--both', 'sec-badge--both', 'Les deux');
+    addGroup('💡 À ajouter au client', refOnly, 'sec-item--ref', 'sec-badge--ref', 'Référence seulement');
+    addGroup('📌 Uniquement client', clientOnly, 'sec-item--client', 'sec-badge--both', 'Client');
+
+    if (!inBoth.length && !refOnly.length && !clientOnly.length) {
+      container.innerHTML = '<p style="color:#4a5568;font-size:12px;padding:1rem 0;text-align:center">Lance un scrape complet pour voir l\'analyse des sections.</p>';
+    }
+  }
+
+  function flattenSections(sectionsJson) {
+    if (!sectionsJson || typeof sectionsJson !== 'object') return {};
+    const result = {};
+    // sections.json is { slug: [section, ...], ... }
+    Object.values(sectionsJson).forEach(arr => {
+      if (!Array.isArray(arr)) return;
+      arr.forEach(s => { if (s.id && !result[s.id]) result[s.id] = s; });
+    });
+    return result;
+  }
+
+  // ── TRANSFER ALL ────────────────────────────────────────────────────────────
+  document.getElementById('btn-transfer-all').addEventListener('click', () => {
+    if (!DATA) return;
+    const refColors = DATA.ref.design.colors || {};
+    const roles = ['primary','secondary','accent','background','surface','text','muted','border'];
+
+    // Transfer all colors
+    const colorsPayload = {};
+    roles.forEach(role => {
+      if (refColors[role]) colorsPayload[role] = refColors[role];
+    });
+    postToClient('setColors', colorsPayload);
+    transferred = { ...colorsPayload };
+
+    // Transfer heading font
+    const refTypo = DATA.ref.design.typography || {};
+    const headFont = Object.values(refTypo).find(v => v.fontFamily)?.fontFamily?.replace(/['"]/g,'').trim();
+    if (headFont) postToClient('setTypography', { headingFont: headFont });
+
+    // Update UI
+    document.querySelectorAll('.color-pair').forEach(p => {
+      p.classList.add('transferred');
+      p.querySelector('.color-pair__arrow').textContent = '✓';
+    });
+    document.querySelectorAll('.font-row').forEach(r => {
+      if (!r.style.opacity) {
+        r.classList.add('transferred');
+        const applyEl = r.querySelector('.font-row__apply');
+        if (applyEl) applyEl.textContent = '✓ Appliqué';
+      }
+    });
+
+    flashClientPane();
+    setStatus('✓ Tout transféré !', 'ok');
+  });
+
+  // ── SAVE CLIENT THEME ────────────────────────────────────────────────────────
+  document.getElementById('btn-save-client').addEventListener('click', () => {
+    // Ask iframe for current theme, then save it
+    setStatus('⏳ Sauvegarde…', '');
+    frameClient.contentWindow?.postMessage({ source: 'mockup-studio', action: 'getTheme' }, '*');
+  });
+
+  window.addEventListener('message', evt => {
+    if (evt.data?.source === 'mockup-iframe' && evt.data?.action === 'themeUpdate') {
+      const theme = evt.data.payload;
+      fetch(`/api/theme/${clientDomain}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(theme),
+      })
+      .then(r => r.ok ? setStatus('✓ Thème sauvegardé', 'ok') : setStatus('✗ Erreur', 'err'))
+      .catch(() => setStatus('✗ Erreur réseau', 'err'));
+    }
+  });
+
+  // ── REGEN ───────────────────────────────────────────────────────────────────
+  document.getElementById('btn-regen').addEventListener('click', () => {
+    setStatus('⏳ Régénération…', '');
+    fetch('/api/mockup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ domain: clientDomain }),
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.ok) {
+        setStatus('✓ Mockup régénéré !', 'ok');
+        setTimeout(() => {
+          frameClient.src = `/output/${clientDomain}/mockup/index.html`;
+        }, 500);
+      } else {
+        setStatus('✗ ' + (d.error || 'Erreur'), 'err');
+      }
+    })
+    .catch(() => setStatus('✗ Erreur réseau', 'err'));
+  });
+
+  // ── Helpers ─────────────────────────────────────────────────────────────────
+  function postToClient(action, payload) {
+    try {
+      frameClient.contentWindow?.postMessage({ source: 'mockup-studio', action, payload }, '*');
+    } catch(e) {}
+  }
+
+  function flashClientPane() {
+    const pane = document.getElementById('pane-client');
+    pane.classList.add('transferred-flash');
+    setTimeout(() => pane.classList.remove('transferred-flash'), 1200);
+  }
+
+  function setStatus(msg, cls) {
+    const el = document.getElementById('tp-status');
+    el.textContent = msg;
+    el.className = cls;
+    if (cls === 'ok') setTimeout(() => { el.textContent = ''; el.className = ''; }, 4000);
+  }
+
+  function loadGFont(name) {
+    const id = 'gf-' + name.replace(/ /g, '-');
+    if (document.getElementById(id)) return;
+    const link = document.createElement('link');
+    link.id   = id;
+    link.rel  = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?family=' + name.replace(/ /g,'+') + ':wght@400;700&display=swap';
+    document.head.appendChild(link);
+  }
+
+  // ── Tabs ─────────────────────────────────────────────────────────────────────
+  document.querySelectorAll('.tp-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tp-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tp-section').forEach(s => s.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+    });
+  });
+
+  // ── Resize dividers ──────────────────────────────────────────────────────────
+  setupResizer('divider-left',  'pane-ref');
+  setupResizer('divider-right', 'pane-client');
+
+  function setupResizer(dividerId, paneId) {
+    const divider = document.getElementById(dividerId);
+    const pane    = document.getElementById(paneId);
+    let dragging = false, startX = 0, startW = 0;
+
+    divider.addEventListener('mousedown', e => {
+      dragging = true;
+      startX = e.clientX;
+      startW = pane.offsetWidth;
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    });
+    document.addEventListener('mousemove', e => {
+      if (!dragging) return;
+      const delta = paneId === 'pane-ref' ? e.clientX - startX : startX - e.clientX;
+      const newW  = Math.max(280, Math.min(startW + delta, window.innerWidth - 400));
+      pane.style.flex = 'none';
+      pane.style.width = newW + 'px';
+    });
+    document.addEventListener('mouseup', () => {
+      if (!dragging) return;
+      dragging = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    });
+  }
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Refactor Studio — Guide d'utilisation</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:     #111827;
+      --ink2:    #374151;
+      --ink3:    #6B7280;
+      --accent:  #4F63D2;
+      --accent-light: #EEF2FF;
+      --green:   #16A34A;
+      --green-bg: #F0FDF4;
+      --gold:    #B45309;
+      --gold-bg: #FFFBEB;
+      --border:  #E5E7EB;
+      --surface: #F9FAFB;
+    }
+
+    html { font-size: 10.5pt; }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      color: var(--ink);
+      line-height: 1.65;
+      background: #fff;
+    }
+
+    /* ── COVER PAGE ─────────────────────────── */
+    .cover {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      background: linear-gradient(160deg, #08111F 0%, #0D1320 60%, #111827 100%);
+      color: #F0F4F8;
+      padding: 80px 72px;
+      page-break-after: always;
+    }
+    .cover-badge {
+      display: inline-block;
+      background: rgba(109,141,255,.15);
+      border: 1px solid rgba(109,141,255,.3);
+      color: #6D8DFF;
+      font-size: 9pt;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      border-radius: 20px;
+      margin-bottom: 32px;
+      width: fit-content;
+    }
+    .cover h1 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 38pt;
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: -1px;
+      margin-bottom: 18px;
+    }
+    .cover h1 span { color: #6D8DFF; }
+    .cover-sub {
+      font-size: 13pt;
+      color: #94A3B8;
+      max-width: 540px;
+      line-height: 1.6;
+      margin-bottom: 56px;
+    }
+    .cover-meta {
+      display: flex;
+      gap: 40px;
+      border-top: 1px solid rgba(255,255,255,.1);
+      padding-top: 32px;
+    }
+    .cover-meta-item label {
+      display: block;
+      font-size: 8pt;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #64748B;
+      margin-bottom: 4px;
+    }
+    .cover-meta-item span {
+      font-size: 10pt;
+      color: #94A3B8;
+    }
+    .cover-workflow {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 56px;
+      flex-wrap: wrap;
+    }
+    .cover-step {
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 9pt;
+      font-weight: 500;
+      color: #CBD5E1;
+    }
+    .cover-arrow {
+      color: #6D8DFF;
+      font-size: 14pt;
+      padding: 0 8px;
+    }
+
+    /* ── TOC ────────────────────────────────── */
+    .toc-page {
+      padding: 64px 72px;
+      page-break-after: always;
+    }
+    .toc-page h2 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 11pt;
+      font-weight: 700;
+      color: var(--ink3);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+    .toc-list { list-style: none; }
+    .toc-list li {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 10.5pt;
+    }
+    .toc-list li:last-child { border-bottom: none; }
+    .toc-num {
+      font-weight: 700;
+      color: var(--accent);
+      min-width: 24px;
+      font-size: 9pt;
+    }
+    .toc-title { flex: 1; }
+    .toc-dots { flex: 1; border-bottom: 1px dotted var(--border); margin: 0 8px; height: 1px; align-self: center; }
+    .toc-sub {
+      font-size: 9pt;
+      color: var(--ink3);
+      margin-left: 24px;
+      padding: 4px 0;
+      border-bottom: none !important;
+    }
+
+    /* ── CONTENT PAGES ──────────────────────── */
+    .page {
+      padding: 56px 72px;
+      page-break-inside: avoid;
+    }
+    .page-break { page-break-before: always; }
+
+    /* ── SECTION HEADERS ────────────────────── */
+    .section-intro {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 32px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid var(--border);
+    }
+    .section-num {
+      width: 36px; height: 36px;
+      background: var(--accent);
+      color: white;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 700;
+      font-size: 14pt;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .section-intro h2 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 17pt;
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: -0.3px;
+    }
+    .section-intro p {
+      font-size: 9.5pt;
+      color: var(--ink3);
+      margin-top: 2px;
+    }
+
+    h3 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 11pt;
+      font-weight: 700;
+      color: var(--ink);
+      margin: 28px 0 12px;
+    }
+    h3:first-child { margin-top: 0; }
+    h4 {
+      font-size: 10pt;
+      font-weight: 600;
+      color: var(--ink2);
+      margin: 20px 0 8px;
+    }
+
+    p { margin-bottom: 10px; font-size: 10.5pt; }
+    p:last-child { margin-bottom: 0; }
+
+    /* ── TABLES ─────────────────────────────── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 9.5pt;
+    }
+    thead tr {
+      background: var(--surface);
+      border-bottom: 2px solid var(--border);
+    }
+    thead th {
+      padding: 9px 12px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 8.5pt;
+      letter-spacing: 0.3px;
+      color: var(--ink2);
+    }
+    tbody tr { border-bottom: 1px solid var(--border); }
+    tbody tr:last-child { border-bottom: none; }
+    tbody td { padding: 8px 12px; color: var(--ink2); vertical-align: top; }
+    tbody tr:nth-child(even) { background: #FAFAFA; }
+    code {
+      font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 8.5pt;
+      color: var(--accent);
+    }
+
+    /* ── CALLOUTS ───────────────────────────── */
+    .callout {
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin: 16px 0;
+      display: flex;
+      gap: 12px;
+      font-size: 9.5pt;
+    }
+    .callout-icon { font-size: 14pt; flex-shrink: 0; line-height: 1.4; }
+    .callout.tip { background: var(--accent-light); border-left: 3px solid var(--accent); }
+    .callout.success { background: var(--green-bg); border-left: 3px solid var(--green); }
+    .callout.warning { background: var(--gold-bg); border-left: 3px solid var(--gold); }
+    .callout strong { font-weight: 600; }
+
+    /* ── STEPS ──────────────────────────────── */
+    .steps { margin: 16px 0; }
+    .step {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+      page-break-inside: avoid;
+    }
+    .step-num {
+      width: 26px; height: 26px;
+      background: var(--accent);
+      color: white;
+      font-weight: 700;
+      font-size: 10pt;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .step-body { flex: 1; }
+    .step-title {
+      font-weight: 600;
+      font-size: 10.5pt;
+      margin-bottom: 5px;
+      color: var(--ink);
+    }
+    .step-desc { font-size: 9.5pt; color: var(--ink2); line-height: 1.6; }
+    .step-desc ul { margin: 6px 0 0 16px; }
+    .step-desc li { margin-bottom: 3px; }
+
+    /* ── DELIVERABLES ───────────────────────── */
+    .deliverables {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .deliverable {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      page-break-inside: avoid;
+    }
+    .deliverable-name {
+      font-weight: 600;
+      font-size: 9.5pt;
+      color: var(--ink);
+      margin-bottom: 4px;
+    }
+    .deliverable-desc { font-size: 9pt; color: var(--ink3); line-height: 1.5; }
+
+    /* ── WORKFLOW DIAGRAM ───────────────────── */
+    .workflow {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      margin: 20px 0;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .wf-step {
+      flex: 1;
+      padding: 14px 12px;
+      text-align: center;
+      background: #fff;
+      border-right: 1px solid var(--border);
+      position: relative;
+    }
+    .wf-step:last-child { border-right: none; }
+    .wf-step-num {
+      font-size: 7pt;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--ink3);
+      margin-bottom: 6px;
+    }
+    .wf-step-icon { font-size: 20pt; margin-bottom: 6px; }
+    .wf-step-label {
+      font-size: 8.5pt;
+      font-weight: 600;
+      color: var(--ink);
+      line-height: 1.3;
+    }
+    .wf-step:nth-child(odd) { background: var(--surface); }
+
+    /* ── PRESETS GRID ───────────────────────── */
+    .preset-families {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 12px 0;
+    }
+    .preset-family {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .preset-family-header {
+      background: var(--surface);
+      padding: 7px 12px;
+      font-size: 7.5pt;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--ink3);
+      border-bottom: 1px solid var(--border);
+    }
+    .preset-family-items {
+      padding: 8px 12px;
+    }
+    .preset-family-items li {
+      list-style: none;
+      font-size: 9pt;
+      color: var(--ink2);
+      padding: 2px 0;
+    }
+
+    /* ── FILE TREE ──────────────────────────── */
+    .file-tree {
+      background: #F8FAFC;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 20px;
+      font-family: 'Cascadia Code', Consolas, monospace;
+      font-size: 8.5pt;
+      line-height: 1.8;
+      color: var(--ink2);
+    }
+    .file-tree .dir { color: var(--accent); font-weight: 600; }
+    .file-tree .comment { color: var(--ink3); }
+
+    /* ── PRINT ──────────────────────────────── */
+    @media print {
+      html { font-size: 10pt; }
+      .cover { min-height: auto; padding: 60px 56px; }
+      .page { padding: 44px 56px; }
+      .toc-page { padding: 44px 56px; }
+      a { text-decoration: none; color: inherit; }
+    }
+
+    @page {
+      size: A4;
+      margin: 0;
+    }
+    @page :not(:first) {
+      @bottom-center {
+        content: "Web Refactor Studio · Guide d'utilisation · " counter(page);
+        font-size: 8pt;
+        color: #9CA3AF;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ COVER ═══════════════════════════════════════════════════════════════ -->
+<div class="cover">
+  <div class="cover-badge">Start'OnLab · Documentation interne</div>
+  <h1>Web Refactor<br><span>Studio</span></h1>
+  <p class="cover-sub">
+    L'outil qui transforme l'URL d'un client en mockup redesigné, en brief structuré et en prompt prêt pour Claude Code.
+  </p>
+  <div class="cover-workflow">
+    <div class="cover-step">🌐 URL client</div>
+    <span class="cover-arrow">→</span>
+    <div class="cover-step">🔍 Scrape</div>
+    <span class="cover-arrow">→</span>
+    <div class="cover-step">⚡ Mockup HTML</div>
+    <span class="cover-arrow">→</span>
+    <div class="cover-step">🎨 Studio</div>
+    <span class="cover-arrow">→</span>
+    <div class="cover-step">✨ Prompt Claude</div>
+  </div>
+  <div class="cover-meta">
+    <div class="cover-meta-item">
+      <label>Version</label>
+      <span>1.0 — Mai 2026</span>
+    </div>
+    <div class="cover-meta-item">
+      <label>Serveur local</label>
+      <span>http://localhost:3456</span>
+    </div>
+    <div class="cover-meta-item">
+      <label>Stack</label>
+      <span>Node.js · Express · Playwright</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TABLE DES MATIÈRES ═══════════════════════════════════════════════════ -->
+<div class="toc-page">
+  <h2>Table des matières</h2>
+  <ul class="toc-list">
+    <li><span class="toc-num">1</span><span class="toc-title">Présentation de l'application</span><span class="toc-dots"></span></li>
+    <li><span class="toc-num">2</span><span class="toc-title">Installation et démarrage</span><span class="toc-dots"></span></li>
+    <li><span class="toc-num">3</span><span class="toc-title">Interface principale — Scraping</span><span class="toc-dots"></span></li>
+    <li><span class="toc-num">4</span><span class="toc-title">Mockup Designer Studio</span><span class="toc-dots"></span></li>
+    <li class="toc-sub"><span>Onglets Style · Couleurs · Typo · Layout · Sections · Brief</span></li>
+    <li class="toc-sub"><span>Variantes automatiques et comparateur</span></li>
+    <li><span class="toc-num">5</span><span class="toc-title">Cas concret 1 — Analyse client et proposition de mockup</span><span class="toc-dots"></span></li>
+    <li><span class="toc-num">6</span><span class="toc-title">Cas concret 2 — Site de référence + site client existant</span><span class="toc-dots"></span></li>
+    <li><span class="toc-num">7</span><span class="toc-title">Structure des fichiers générés</span><span class="toc-dots"></span></li>
+    <li><span class="toc-num">8</span><span class="toc-title">Raccourcis et astuces</span><span class="toc-dots"></span></li>
+  </ul>
+</div>
+
+<!-- ══ SECTION 1 — PRÉSENTATION ═══════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-intro">
+    <div class="section-num">1</div>
+    <div>
+      <h2>Présentation de l'application</h2>
+      <p>Ce que fait l'outil, à qui il s'adresse, comment il s'insère dans le workflow</p>
+    </div>
+  </div>
+
+  <h3>Objectif</h3>
+  <p>
+    Web Refactor Studio accélère la phase d'avant-vente et de production lors d'une refonte web. En partant d'une simple URL, l'outil analyse automatiquement un site existant, génère un mockup HTML redesigné, permet de le personnaliser visuellement, puis exporte un brief structuré vers Claude Code pour la production.
+  </p>
+
+  <div class="workflow">
+    <div class="wf-step">
+      <div class="wf-step-num">Étape 1</div>
+      <div class="wf-step-icon">🌐</div>
+      <div class="wf-step-label">URL du site client</div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-step-num">Étape 2</div>
+      <div class="wf-step-icon">🔍</div>
+      <div class="wf-step-label">Scraping automatique</div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-step-num">Étape 3</div>
+      <div class="wf-step-icon">⚡</div>
+      <div class="wf-step-label">Mockup HTML généré</div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-step-num">Étape 4</div>
+      <div class="wf-step-icon">🎨</div>
+      <div class="wf-step-label">Studio de design</div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-step-num">Étape 5</div>
+      <div class="wf-step-icon">✨</div>
+      <div class="wf-step-label">Prompt Claude Code</div>
+    </div>
+  </div>
+
+  <h3>Ce que l'outil extrait automatiquement</h3>
+  <table>
+    <thead><tr><th>Donnée extraite</th><th>Utilité dans le Studio</th></tr></thead>
+    <tbody>
+      <tr><td>Palette de couleurs détectée</td><td>Import direct dans le Studio via "Site de référence"</td></tr>
+      <tr><td>Typographies utilisées</td><td>Polices pré-renseignées dans l'onglet TYPO</td></tr>
+      <tr><td>Structure des pages (sitemap)</td><td>Navigation entre pages dans la preview</td></tr>
+      <tr><td>CTAs, formulaires, sections</td><td>Onglet SECTIONS, rapport d'audit</td></tr>
+      <tr><td>Framework et bibliothèques JS</td><td>Rapport d'audit, score de complexité</td></tr>
+    </tbody>
+  </table>
+
+  <h3>À qui s'adresse cet outil</h3>
+  <p>Freelances web et petites agences qui font de la refonte. L'outil est particulièrement utile lors de la phase d'avant-vente pour produire rapidement une proposition visuelle convaincante, et en phase de production pour structurer le brief technique vers Claude Code.</p>
+
+  <div class="callout tip">
+    <span class="callout-icon">💡</span>
+    <div><strong>Gain de temps estimé :</strong> un mockup personnalisé avec rapport d'audit est générable en moins de 10 minutes après réception de l'URL client.</div>
+  </div>
+</div>
+
+<!-- ══ SECTION 2 — INSTALLATION ════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-intro">
+    <div class="section-num">2</div>
+    <div>
+      <h2>Installation et démarrage</h2>
+      <p>Prérequis et commandes de lancement</p>
+    </div>
+  </div>
+
+  <h3>Prérequis</h3>
+  <table>
+    <thead><tr><th>Outil</th><th>Version minimale</th><th>Vérification</th></tr></thead>
+    <tbody>
+      <tr><td>Node.js</td><td>18+</td><td><code>node --version</code></td></tr>
+      <tr><td>npm</td><td>8+</td><td><code>npm --version</code></td></tr>
+      <tr><td>Chromium</td><td>Installé via Playwright</td><td>Automatique à la première installation</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Commandes</h3>
+  <table>
+    <thead><tr><th>Commande</th><th>Quand l'utiliser</th></tr></thead>
+    <tbody>
+      <tr><td><code>npm run setup</code></td><td>Première installation (installe les dépendances + Chromium)</td></tr>
+      <tr><td><code>npm run server</code></td><td>Lancer le serveur web — à faire avant d'utiliser l'interface</td></tr>
+    </tbody>
+  </table>
+
+  <p>Une fois le serveur lancé, ouvrir <strong>http://localhost:3456</strong> dans le navigateur.</p>
+
+  <div class="callout warning">
+    <span class="callout-icon">⚠️</span>
+    <div><strong>Note :</strong> laisser le terminal ouvert pendant toute la session. Fermer le terminal arrête le serveur et rend l'interface indisponible.</div>
+  </div>
+</div>
+
+<!-- ══ SECTION 3 — INTERFACE PRINCIPALE ════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-intro">
+    <div class="section-num">3</div>
+    <div>
+      <h2>Interface principale</h2>
+      <p>Formulaire de scraping, journal en temps réel, historique des analyses</p>
+    </div>
+  </div>
+
+  <h3>Formulaire de scraping</h3>
+  <table>
+    <thead><tr><th>Champ</th><th>Description</th><th>Recommandation</th></tr></thead>
+    <tbody>
+      <tr><td><strong>URL</strong></td><td>URL complète du site à analyser</td><td>Inclure <code>https://</code></td></tr>
+      <tr><td><strong>Profondeur</strong></td><td>Nombre de niveaux de pages crawlées</td><td>2 pour un site standard, 1 pour une démo rapide</td></tr>
+      <tr><td><strong>Screenshots</strong></td><td>Capture de chaque page analysée</td><td>Actif par défaut — désactiver pour gagner du temps</td></tr>
+      <tr><td><strong>Créer ZIP</strong></td><td>Archive compressée du dossier de sortie</td><td>Utile pour envoyer les fichiers au client</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Journal en temps réel</h3>
+  <p>Pendant le scraping, un terminal intégré affiche les étapes. À la fin, le mockup est généré automatiquement sans action supplémentaire.</p>
+
+  <h3>Historique des analyses</h3>
+  <p>Chaque domaine analysé est conservé dans la grille d'historique avec accès rapide à tous les livrables :</p>
+  <table>
+    <thead><tr><th>Bouton</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td><code>report.md</code></td><td>Rapport d'audit complet (score, UX, SEO, conversion, estimation)</td></tr>
+      <tr><td><code>📋 Prompt audit</code></td><td>Prompt structuré pour demander un audit à Claude</td></tr>
+      <tr><td><code>⚡ Mockup</code></td><td>Regénérer le mockup si modifié ou absent</td></tr>
+      <tr><td><code>✦ 3 variantes</code></td><td>Générer 3 déclinaisons de style automatiques</td></tr>
+      <tr><td><code>⚖ Comparer</code></td><td>Comparateur côte à côte des 3 variantes</td></tr>
+      <tr><td><code>🎨 Studio</code></td><td>Ouvrir le Mockup Designer Studio</td></tr>
+      <tr><td><code>Dossier</code></td><td>Accès direct aux fichiers bruts dans <code>output/</code></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══ SECTION 4 — STUDIO ═══════════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-intro">
+    <div class="section-num">4</div>
+    <div>
+      <h2>Mockup Designer Studio</h2>
+      <p>Personnalisation visuelle en temps réel — 8 onglets, 20 presets, variantes automatiques</p>
+    </div>
+  </div>
+
+  <h3>Les 8 onglets</h3>
+  <table>
+    <thead><tr><th>Onglet</th><th>Contenu</th></tr></thead>
+    <tbody>
+      <tr><td><strong>STYLE</strong></td><td>Import de site de référence + 20 presets en 6 familles</td></tr>
+      <tr><td><strong>COULEURS</strong></td><td>Édition des 8 tokens de couleur (primary, accent, background…)</td></tr>
+      <tr><td><strong>TYPO</strong></td><td>Polices titres/corps, graisses, taille, interligne, espacement</td></tr>
+      <tr><td><strong>LAYOUT</strong></td><td>Espacement sections, largeur conteneur, rayon bordures</td></tr>
+      <tr><td><strong>SECTIONS</strong></td><td>Activation/désactivation de chaque bloc du mockup</td></tr>
+      <tr><td><strong>MOBILE</strong></td><td>Prévisualisation en mode tablette et mobile</td></tr>
+      <tr><td><strong>BRIEF</strong></td><td>Contexte projet (secteur, cible, ton, stack) pour enrichir le prompt</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Les 20 presets — 6 familles</h3>
+  <div class="preset-families">
+    <div class="preset-family">
+      <div class="preset-family-header">PROFESSIONNEL</div>
+      <ul class="preset-family-items">
+        <li>🏢 Corporate</li><li>⚖️ Juridique</li><li>🏠 Immobilier</li><li>🌍 ONG / Asso</li>
+      </ul>
+    </div>
+    <div class="preset-family">
+      <div class="preset-family-header">CRÉATIF</div>
+      <ul class="preset-family-items">
+        <li>📸 Photographe</li><li>🎨 Studio créatif</li><li>✏️ Éditorial</li><li>🏆 Sportif</li><li>○ Minimaliste</li>
+      </ul>
+    </div>
+    <div class="preset-family">
+      <div class="preset-family-header">COMMERCE</div>
+      <ul class="preset-family-items">
+        <li>🍽️ Restaurant gastro</li><li>🛍️ E-commerce</li><li>🪵 Artisan</li>
+      </ul>
+    </div>
+    <div class="preset-family">
+      <div class="preset-family-header">TECH</div>
+      <ul class="preset-family-items">
+        <li>⚡ Tech moderne</li><li>💻 SaaS / B2B</li><li>🎓 Formation</li>
+      </ul>
+    </div>
+    <div class="preset-family">
+      <div class="preset-family-header">PREMIUM</div>
+      <ul class="preset-family-items">
+        <li>👑 Premium expert</li><li>○ Luxe discret</li>
+      </ul>
+    </div>
+    <div class="preset-family">
+      <div class="preset-family-header">BIEN-ÊTRE</div>
+      <ul class="preset-family-items">
+        <li>🌿 Santé & bien-être</li><li>🏡 Chaleureux local</li><li>🌾 Artisanal</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Variantes automatiques</h3>
+  <p>Le bouton <strong>⚡ 3 variantes</strong> dans la barre de pages génère instantanément 3 déclinaisons stylistiques du mockup actuel :</p>
+  <table>
+    <thead><tr><th>Variante</th><th>Couleurs</th><th>Typographie</th><th>Forme</th></tr></thead>
+    <tbody>
+      <tr><td>🏢 <strong>Professionnel</strong></td><td>Bleu corporate sur blanc</td><td>Plus Jakarta Sans + Open Sans</td><td>Angles nets, radius 6px</td></tr>
+      <tr><td>👑 <strong>Premium</strong></td><td>Or sur fond sombre</td><td>Cormorant + Inter</td><td>Très carré, radius 4px</td></tr>
+      <tr><td>🏡 <strong>Chaleureux local</strong></td><td>Terre cuite sur crème</td><td>Playfair Display + Lato</td><td>Arrondi, radius 12px</td></tr>
+    </tbody>
+  </table>
+
+  <p>Le bouton <strong>⚖ Comparer</strong> ouvre une page 3 colonnes côte à côte. Le bouton "✓ Choisir" applique le thème de la variante directement au Studio.</p>
+
+  <h3>Actions du panneau bas</h3>
+  <table>
+    <thead><tr><th>Bouton</th><th>Rôle</th></tr></thead>
+    <tbody>
+      <tr><td>💾 <strong>Sauvegarder</strong></td><td>Enregistre le thème en localStorage et sur le serveur</td></tr>
+      <tr><td>📂 <strong>Charger</strong></td><td>Importe un <code>theme.json</code> depuis votre disque</td></tr>
+      <tr><td>⬇ <strong>Export JSON</strong></td><td>Télécharge le thème actuel pour archivage ou réutilisation</td></tr>
+      <tr><td>✨ <strong>Générer Prompt</strong></td><td>Génère le brief complet structuré pour Claude Code</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══ SECTION 5 — CAS CONCRET 1 ══════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-intro">
+    <div class="section-num">5</div>
+    <div>
+      <h2>Cas concret 1</h2>
+      <p>Analyse du site client existant → audit + mockup redesigné → brief Claude Code</p>
+    </div>
+  </div>
+
+  <div class="callout success">
+    <span class="callout-icon">🎯</span>
+    <div><strong>Contexte :</strong> Un client vous contacte avec son site actuel. Il veut un devis de refonte et une idée visuelle de ce que pourrait donner le nouveau site. Vous n'avez que l'URL.</div>
+  </div>
+
+  <div class="steps">
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-title">Scraper le site client</div>
+        <div class="step-desc">
+          Ouvrez <strong>http://localhost:3456</strong>, collez l'URL du site client. Réglez la profondeur sur <strong>2</strong> pour capturer l'accueil et les pages principales. Laissez Screenshots et ZIP activés. Cliquez <strong>Lancer l'analyse</strong> et attendez la fin (3–5 min selon la taille du site). Le mockup se génère automatiquement à la fin.
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-title">Consulter le rapport d'audit</div>
+        <div class="step-desc">
+          Dans l'historique, cliquez <code>report.md</code>. Vous obtenez un rapport complet avec : score global /10, points forts à conserver, problèmes UX, problèmes SEO, freins à la conversion, recommandations classées (quick wins / refonte / long terme), estimation de coût. Ce rapport est directement envoyable au client.
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-title">Ouvrir le Studio et choisir un preset</div>
+        <div class="step-desc">
+          Cliquez <code>🎨 Studio</code>. Dans l'onglet <strong>STYLE</strong>, dépliez la famille de presets correspondant au secteur client. Cliquez le preset adapté — le mockup se met à jour instantanément dans la preview.
+          <ul>
+            <li>Restaurant → <em>Restaurant gastro</em></li>
+            <li>Profession libérale → <em>Juridique</em> ou <em>Corporate</em></li>
+            <li>Artisan, commerçant local → <em>Chaleureux local</em> ou <em>Artisan</em></li>
+            <li>Startup, SaaS → <em>Tech moderne</em> ou <em>SaaS / B2B</em></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <div class="step-title">Affiner couleurs et typographies</div>
+        <div class="step-desc">
+          Onglet <strong>COULEURS</strong> → ajuster la couleur primaire pour correspondre à la charte du client (si elle existe). Onglet <strong>TYPO</strong> → choisir des polices Google Fonts cohérentes avec l'identité de marque. Chaque modification s'applique en temps réel dans la preview.
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <div class="step-title">Générer les 3 variantes et choisir</div>
+        <div class="step-desc">
+          Cliquer <strong>⚡ 3 variantes</strong> dans la barre de pages. Puis <strong>⚖ Comparer</strong> pour voir les 3 options côte à côte. Choisir la variante la plus convaincante → cliquer "✓ Choisir" pour l'appliquer au Studio. Ces 3 variantes peuvent aussi être présentées directement en visio avec le client.
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <div class="step-title">Remplir le brief et exporter le prompt</div>
+        <div class="step-desc">
+          Onglet <strong>BRIEF</strong> : renseigner secteur, cible, ton éditorial, stack technique souhaitée. Cliquer <strong>💾 Sauvegarder</strong> puis <strong>✨ Générer Prompt</strong>. Copier le prompt généré → le coller dans Claude Code pour démarrer la production.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <h3>Livrables de ce cas</h3>
+  <div class="deliverables">
+    <div class="deliverable">
+      <div class="deliverable-name">📄 Rapport d'audit (report.md)</div>
+      <div class="deliverable-desc">Envoyable directement au client. Justifie la refonte et valorise la prestation.</div>
+    </div>
+    <div class="deliverable">
+      <div class="deliverable-name">🖥 Mockup HTML statique</div>
+      <div class="deliverable-desc">Aperçu visuel du futur site. S'ouvre dans n'importe quel navigateur.</div>
+    </div>
+    <div class="deliverable">
+      <div class="deliverable-name">⚖ Comparateur 3 variantes</div>
+      <div class="deliverable-desc">Page HTML autonome présentant les 3 options de style côte à côte.</div>
+    </div>
+    <div class="deliverable">
+      <div class="deliverable-name">✨ Prompt Claude Code</div>
+      <div class="deliverable-desc">Brief technique structuré avec toutes les données extraites du site. Prêt pour la production.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SECTION 6 — CAS CONCRET 2 ══════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-intro">
+    <div class="section-num">6</div>
+    <div>
+      <h2>Cas concret 2</h2>
+      <p>Site de référence + site client existant → redesign inspiré de la référence</p>
+    </div>
+  </div>
+
+  <div class="callout success">
+    <span class="callout-icon">🎯</span>
+    <div><strong>Contexte :</strong> Vous avez trouvé un site de référence premium (concurrent, inspiration sectorielle) dont vous voulez vous inspirer pour le redesign du client. L'objectif est d'appliquer le style visuel de la référence au contenu et à la structure du site client.</div>
+  </div>
+
+  <div class="steps">
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-title">Scraper le site de référence en premier</div>
+        <div class="step-desc">
+          Ouvrez <strong>http://localhost:3456</strong>, collez l'URL du site de référence (ex: un concurrent premium dans le même secteur que le client). Profondeur <strong>1</strong> suffit généralement — vous cherchez uniquement le design system, pas tout le contenu. Lancez et attendez la fin.
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-title">Scraper le site client</div>
+        <div class="step-desc">
+          Saisissez ensuite l'URL du site client. Profondeur <strong>2</strong> pour capturer accueil + pages principales. Lancez l'analyse. Le mockup client se génère automatiquement à la fin.
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-title">Ouvrir le Studio du site CLIENT</div>
+        <div class="step-desc">
+          Dans l'historique, sur la carte du <strong>site client</strong> (pas la référence), cliquez <code>🎨 Studio</code>. Le mockup généré à partir du contenu du client s'affiche dans la preview.
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <div class="step-title">Importer le style du site de référence</div>
+        <div class="step-desc">
+          Onglet <strong>STYLE</strong> → section "Site de référence" en haut du panneau. Saisissez le domaine de la référence dans le champ texte, ou sélectionnez-le dans la liste déroulante. Cliquez la flèche bleue <strong>→</strong>. Les swatches de couleur et les polices détectées sur le site de référence s'affichent. Cliquez <strong>Appliquer les couleurs</strong> et/ou <strong>Appliquer la typo</strong> selon vos besoins.
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <div class="step-title">Ajuster et personnaliser</div>
+        <div class="step-desc">
+          Le mockup client adopte maintenant l'identité visuelle de la référence. Affinez dans les onglets :
+          <ul>
+            <li><strong>COULEURS</strong> → retoucher les teintes si nécessaire</li>
+            <li><strong>TYPO</strong> → adapter si les polices de référence ne correspondent pas</li>
+            <li><strong>SECTIONS</strong> → activer/désactiver selon la structure propre au client</li>
+            <li><strong>LAYOUT</strong> → ajuster les espacements si la mise en page diffère</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <div class="step-title">Valider avec les 3 variantes</div>
+        <div class="step-desc">
+          Cliquer <strong>⚡ 3 variantes</strong> → <strong>⚖ Comparer</strong>. En visio avec le client, ouvrez <code>compare.html</code> directement dans le navigateur pour une comparaison impactante. Le client choisit → <strong>✓ Choisir</strong> applique la variante.
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">7</div>
+      <div class="step-body">
+        <div class="step-title">Enrichir le brief et exporter</div>
+        <div class="step-desc">
+          Onglet <strong>BRIEF</strong> → remplir les champs de contexte. <strong>💾 Sauvegarder</strong> → <strong>✨ Générer Prompt</strong>. Le prompt intègre à la fois les données du site client et les choix stylistiques inspirés de la référence.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <h3>Livrables de ce cas</h3>
+  <div class="deliverables">
+    <div class="deliverable">
+      <div class="deliverable-name">📄 Rapport d'audit client</div>
+      <div class="deliverable-desc">Diagnostic du site actuel + argumentaire pour la refonte.</div>
+    </div>
+    <div class="deliverable">
+      <div class="deliverable-name">🖥 Mockup fusionné</div>
+      <div class="deliverable-desc">Contenu client + style de référence. Démontre le potentiel du redesign.</div>
+    </div>
+    <div class="deliverable">
+      <div class="deliverable-name">⚖ Comparateur 3 variantes</div>
+      <div class="deliverable-desc">Outil de décision pour le client. Idéal en présentation visio.</div>
+    </div>
+    <div class="deliverable">
+      <div class="deliverable-name">✨ Prompt Claude Code</div>
+      <div class="deliverable-desc">Brief enrichi avec les données des deux sites. Démarre la production directement.</div>
+    </div>
+    <div class="deliverable">
+      <div class="deliverable-name">💾 theme.json exporté</div>
+      <div class="deliverable-desc">Thème sauvegardé — réutilisable pour des itérations ou d'autres projets du même secteur.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SECTION 7 — STRUCTURE DES FICHIERS ════════════════════════════════= -->
+<div class="page page-break">
+  <div class="section-intro">
+    <div class="section-num">7</div>
+    <div>
+      <h2>Structure des fichiers générés</h2>
+      <p>Organisation du dossier <code>output/</code> après analyse</p>
+    </div>
+  </div>
+
+  <div class="file-tree">
+    <span class="dir">output/</span><br>
+    └── <span class="dir">domaine.com/</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;├── <span class="dir">analysis/</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── audit.json&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">← framework, libs, complexité technique</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── content.json&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">← H1, CTAs, formulaires, navigation</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── design-system.json&nbsp;<span class="comment">← couleurs et typographies détectées</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── report.md&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">← rapport d'audit complet (envoyable client)</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── sitemap.json&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">← structure et liste des pages</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;├── <span class="dir">mockup/</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── index.html&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">← mockup principal redesigné</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── variant-a.html&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">← variante Professionnel</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── variant-b.html&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">← variante Premium</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── variant-c.html&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">← variante Chaleureux local</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── compare.html&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">← comparateur 3 variantes côte à côte</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── theme.json&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">← thème sauvegardé depuis le Studio</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;└── <span class="dir">screenshots/</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">← captures d'écran par page analysée</span>
+  </div>
+
+  <div class="callout tip" style="margin-top:20px">
+    <span class="callout-icon">💡</span>
+    <div><strong>Partager les fichiers :</strong> le dossier <code>output/domaine.com/</code> est autonome. Vous pouvez le zipper (bouton ZIP activé au scraping) et l'envoyer ou l'archiver tel quel.</div>
+  </div>
+</div>
+
+<!-- ══ SECTION 8 — RACCOURCIS ══════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-intro">
+    <div class="section-num">8</div>
+    <div>
+      <h2>Raccourcis et astuces</h2>
+      <p>Problèmes fréquents et bonnes pratiques</p>
+    </div>
+  </div>
+
+  <table>
+    <thead><tr><th>Situation</th><th>Solution</th></tr></thead>
+    <tbody>
+      <tr><td>La preview ne charge pas</td><td>Attendre que le spinner disparaisse — le mockup se charge en iframe. Si le problème persiste, cliquer "⚡ Générer le mockup" visible dans la preview vide.</td></tr>
+      <tr><td>Le preset ne s'applique pas</td><td>Vérifier que le mockup est bien généré avant d'ouvrir le Studio.</td></tr>
+      <tr><td>Site de référence introuvable</td><td>Scraper d'abord le site de référence, puis relancer l'import depuis le Studio.</td></tr>
+      <tr><td>Présenter au client</td><td>Ouvrir <code>compare.html</code> directement dans le navigateur — aucun serveur requis, fonctionne en offline.</td></tr>
+      <tr><td>Sauvegarder une version</td><td>Export JSON depuis le Studio → stocker le fichier. Rechargeable via le bouton "Charger".</td></tr>
+      <tr><td>"Serveur non disponible"</td><td>Le serveur n'est pas démarré. Lancer <code>npm run server</code> dans le terminal.</td></tr>
+      <tr><td>Modifier le mockup après coup</td><td>Rouvrir le Studio : les modifications précédentes sont rechargées depuis le localStorage.</td></tr>
+      <tr><td>Proposer plusieurs directions</td><td>Utiliser les 3 variantes comme base de discussion. Une fois la direction choisie, affiner dans le Studio.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Endpoints API disponibles</h3>
+  <table>
+    <thead><tr><th>Méthode</th><th>Route</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>POST</code></td><td><code>/api/scrape</code></td><td>Lance un job de scraping</td></tr>
+      <tr><td><code>GET</code></td><td><code>/api/stream/:jobId</code></td><td>Stream SSE des logs en direct</td></tr>
+      <tr><td><code>GET</code></td><td><code>/api/history</code></td><td>Liste des domaines analysés</td></tr>
+      <tr><td><code>GET</code></td><td><code>/api/report/:domain</code></td><td>Contenu du rapport d'audit</td></tr>
+      <tr><td><code>POST</code></td><td><code>/api/mockup</code></td><td>Génère le mockup HTML</td></tr>
+      <tr><td><code>POST</code></td><td><code>/api/variants/:domain</code></td><td>Génère les 3 variantes de style</td></tr>
+      <tr><td><code>GET</code></td><td><code>/api/cross-theme/:domain</code></td><td>Extrait le thème d'un domaine</td></tr>
+      <tr><td><code>POST</code></td><td><code>/api/theme/:domain</code></td><td>Sauvegarde le thème actuel</td></tr>
+    </tbody>
+  </table>
+
+  <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border); text-align: center; color: var(--ink3); font-size: 9pt;">
+    Web Refactor Studio · Start'OnLab · Version 1.0 · Mai 2026
+  </div>
+</div>
+
+</body>
+</html>

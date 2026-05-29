@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Site Scraper</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%236c8ef5'/><text y='.9em' font-size='72' x='12'>⚡</text></svg>">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #08111F;
+      --surface: #0D1320;
+      --surface2: #111827;
+      --border: rgba(255,255,255,0.07);
+      --accent: #6D8DFF;
+      --accent2: #5470CC;
+      --green: #22C55E;
+      --yellow: #F59E0B;
+      --red: #EF4444;
+      --orange: #fb923c;
+      --cyan: #22d3ee;
+      --gray: #64748B;
+      --text: #F0F4F8;
+      --text2: #94A3B8;
+      --radius: 10px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* HEADER */
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 14px 32px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .logo {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--accent), #a78bfa);
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    header h1 { font-size: 16px; font-weight: 600; letter-spacing: -0.3px; }
+    header span { font-size: 12px; color: var(--text2); margin-left: 4px; }
+
+    /* MAIN LAYOUT */
+    main {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+
+    /* CARD */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+    }
+
+    /* FORM */
+    #form-section { display: block; }
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text2);
+      margin-bottom: 8px;
+      letter-spacing: 0.2px;
+    }
+    .url-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    input[type="url"] {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: var(--text);
+      font-size: 16px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    input[type="url"]:focus { border-color: var(--accent); }
+    input[type="url"]::placeholder { color: var(--gray); }
+    input[type="url"].input-error { border-color: var(--red); }
+    .url-error-msg {
+      font-size: 12px;
+      color: var(--red);
+      margin-top: -14px;
+      margin-bottom: 12px;
+      display: none;
+    }
+    .url-error-msg.visible { display: block; }
+
+    .options-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    .opt-group { display: flex; align-items: center; gap: 8px; }
+    .opt-group label { font-size: 14px; color: var(--text2); cursor: pointer; }
+    select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 10px;
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+      cursor: pointer;
+    }
+    .toggle {
+      position: relative; width: 36px; height: 20px;
+      background: var(--border); border-radius: 999px;
+      cursor: pointer; transition: background .2s;
+      flex-shrink: 0;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-thumb {
+      position: absolute; top: 3px; left: 3px;
+      width: 14px; height: 14px;
+      background: white; border-radius: 50%;
+      transition: transform .2s;
+    }
+    .toggle input:checked ~ .toggle-thumb { transform: translateX(16px); }
+    .toggle input:checked + .toggle-thumb { background: var(--accent); }
+    .toggle:has(input:checked) { background: var(--accent2); }
+
+    /* BUTTON */
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 28px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .2s, transform .1s;
+      white-space: nowrap;
+    }
+    .btn-primary:hover { background: var(--accent2); }
+    .btn-primary:active { transform: scale(.98); }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+
+    .btn-secondary {
+      background: var(--surface2);
+      color: var(--text2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background .2s, color .2s;
+    }
+    .btn-secondary:hover { background: var(--border); color: var(--text); }
+
+    /* LOG SECTION */
+    #log-section { display: none; }
+
+    .log-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .log-title { font-size: 15px; font-weight: 600; }
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+    .status-running { background: rgba(250,204,21,.12); color: var(--yellow); }
+    .status-done    { background: rgba(74,222,128,.12); color: var(--green); }
+    .status-error   { background: rgba(248,113,113,.12); color: var(--red); }
+
+    .pulse {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: currentColor;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.3; } }
+
+    /* PROGRESS STEPS */
+    .steps-bar {
+      display: flex; gap: 6px;
+      margin-bottom: 16px;
+    }
+    .step-dot {
+      flex: 1; height: 4px; border-radius: 2px;
+      background: var(--border);
+      transition: background .4s;
+    }
+    .step-dot.active  { background: var(--yellow); }
+    .step-dot.done    { background: var(--green); }
+
+    /* TERMINAL */
+    #log-output {
+      background: #060D1A;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      height: 420px;
+      overflow-y: auto;
+      touch-action: pan-y;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 13px;
+      line-height: 1.65;
+      scroll-behavior: smooth;
+    }
+    #log-output .l-step  { color: var(--yellow); font-weight: bold; }
+    #log-output .l-done  { color: var(--green); }
+    #log-output .l-warn  { color: var(--orange); }
+    #log-output .l-error { color: var(--red); }
+    #log-output .l-sub   { color: var(--gray); }
+    #log-output .l-asset { color: var(--cyan); }
+    #log-output .l-info  { color: #93c5fd; }
+    #log-output .l-box   { color: var(--cyan); font-weight: bold; }
+    #log-output .l-plain { color: #cbd5e1; }
+
+    /* RESULT BANNER */
+    #result-section { display: none; margin-top: 20px; }
+    .result-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .result-card.success { border-color: rgba(74,222,128,.3); }
+    .result-card.error   { border-color: rgba(248,113,113,.3); }
+    .result-info { display: flex; flex-direction: column; gap: 4px; }
+    .result-title { font-size: 15px; font-weight: 600; }
+    .result-sub   { font-size: 13px; color: var(--text2); }
+    .result-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    /* HISTORY */
+    #history-section { margin-top: 48px; }
+    .section-title {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text2);
+      letter-spacing: .2px;
+      margin-bottom: 16px;
+    }
+    .history-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 14px;
+    }
+    .history-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      transition: border-color .2s, box-shadow .2s;
+      display: flex;
+      flex-direction: column;
+    }
+    .history-card:hover { border-color: rgba(109,141,255,.35); box-shadow: 0 4px 24px rgba(0,0,0,.35); }
+
+    /* Miniature screenshot */
+    .history-thumb {
+      width: 100%;
+      height: 80px;
+      overflow: hidden;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      flex-shrink: 0;
+    }
+    .history-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+      display: block;
+      transition: transform .3s;
+    }
+    .history-card:hover .history-thumb img { transform: scale(1.03); }
+    .history-thumb-placeholder {
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; color: var(--border);
+    }
+
+    /* Info block */
+    .history-info { padding: 14px 14px 0; }
+    .history-domain {
+      font-size: 13px; font-weight: 600;
+      margin-bottom: 4px;
+      word-break: break-all;
+      color: var(--text);
+    }
+    .history-date {
+      font-size: 11px; color: var(--gray);
+      margin-bottom: 12px;
+    }
+
+    /* Actions */
+    .history-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      padding: 0 14px 14px;
+      margin-top: auto;
+    }
+    .btn-xs {
+      padding: 6px 11px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text2);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      min-height: 30px;
+      white-space: nowrap;
+      transition: background .15s, color .15s, border-color .15s;
+    }
+    .btn-xs:hover { background: rgba(255,255,255,.07); color: var(--text); border-color: rgba(255,255,255,.15); }
+    .btn-xs.primary { background: rgba(109,141,255,.12); border-color: rgba(109,141,255,.4); color: var(--accent); }
+    .btn-xs.primary:hover { background: var(--accent); color: white; border-color: var(--accent); }
+    .btn-xs.green { background: rgba(34,197,94,.1); border-color: rgba(34,197,94,.35); color: var(--green); }
+    .btn-xs.green:hover { background: var(--green); color: #0a1f0a; border-color: var(--green); }
+
+    .empty-state {
+      color: var(--gray); font-size: 14px;
+      padding: 20px 0;
+    }
+
+    /* MODAL */
+    #modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.7);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    #modal-overlay.open { display: flex; }
+    #modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      width: 100%; max-width: 780px;
+      max-height: 85vh;
+      display: flex; flex-direction: column;
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-title { font-size: 15px; font-weight: 600; }
+    .modal-close {
+      background: none; border: none; color: var(--text2);
+      font-size: 20px; cursor: pointer; padding: 4px 8px;
+      border-radius: 4px;
+    }
+    .modal-close:hover { background: var(--border); color: var(--text); }
+    .modal-body {
+      overflow-y: auto; flex: 1;
+      padding: 24px;
+    }
+    #report-content {
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 12.5px; line-height: 1.7;
+      color: var(--text2);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .modal-footer {
+      padding: 14px 24px;
+      border-top: 1px solid var(--border);
+      display: flex; justify-content: flex-end; gap: 10px;
+    }
+
+    /* DIVIDER */
+    hr { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+
+    /* SCROLLBAR */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--gray); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">⚡</div>
+  <h1>Site Scraper <span>— Rétro-ingénierie web</span></h1>
+</header>
+
+<main>
+
+  <!-- FORM -->
+  <div class="card" id="form-section">
+    <label class="form-label" for="url-input">URL du site à analyser</label>
+    <div class="url-row">
+      <input type="url" id="url-input" placeholder="https://www.exemple.com" autocomplete="off" aria-describedby="url-error" />
+      <button class="btn-primary" id="btn-start" onclick="startScrape()">Lancer ▶</button>
+    </div>
+    <p class="url-error-msg" id="url-error" role="alert">L'URL doit commencer par https:// ou http://</p>
+
+    <div class="options-row">
+      <div class="opt-group">
+        <label class="form-label" style="margin:0">Profondeur</label>
+        <select id="sel-depth">
+          <option value="1">1 niveau</option>
+          <option value="2">2 niveaux</option>
+          <option value="3">3 niveaux</option>
+        </select>
+      </div>
+
+      <div class="opt-group">
+        <label class="toggle">
+          <input type="checkbox" id="chk-screenshots" checked>
+          <span class="toggle-thumb"></span>
+        </label>
+        <label for="chk-screenshots">Screenshots</label>
+      </div>
+
+      <div class="opt-group">
+        <label class="toggle">
+          <input type="checkbox" id="chk-zip" checked>
+          <span class="toggle-thumb"></span>
+        </label>
+        <label for="chk-zip">Créer ZIP</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOG SECTION -->
+  <div id="log-section">
+    <div class="log-header">
+      <span class="log-title" id="log-title">Analyse en cours…</span>
+      <span class="status-badge status-running" id="status-badge">
+        <span class="pulse"></span>
+        <span id="status-text">En cours</span>
+      </span>
+    </div>
+
+    <div class="steps-bar" id="steps-bar">
+      <div class="step-dot" id="s1"></div>
+      <div class="step-dot" id="s2"></div>
+      <div class="step-dot" id="s3"></div>
+      <div class="step-dot" id="s4"></div>
+      <div class="step-dot" id="s5"></div>
+      <div class="step-dot" id="s6"></div>
+    </div>
+
+    <div id="log-output"></div>
+
+    <!-- RESULT -->
+    <div id="result-section">
+      <div class="result-card" id="result-card">
+        <div class="result-info">
+          <div class="result-title" id="result-title">—</div>
+          <div class="result-sub" id="result-sub">—</div>
+        </div>
+        <div class="result-actions" id="result-actions"></div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px; display:flex; gap:10px;">
+      <button class="btn-secondary" onclick="resetToForm()">← Nouveau scraping</button>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div id="history-section">
+    <div class="section-title">Analyses précédentes</div>
+    <div class="history-grid" id="history-grid">
+      <p class="empty-state">Aucune analyse trouvée dans ./output/</p>
+    </div>
+  </div>
+
+  <!-- STUDIO COMPARATIF -->
+  <div id="compare-studio-section" style="display:none;margin-top:32px">
+    <div class="section-title">🔁 Design Studio Comparatif</div>
+    <div class="card" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <div style="flex:1;min-width:200px">
+        <label class="form-label" style="margin-bottom:6px;display:block">Site référence <span style="color:var(--warn)">●</span></label>
+        <select id="cs-ref" style="width:100%;padding:10px 12px;background:var(--card-bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;cursor:pointer">
+          <option value="">— Choisir un site —</option>
+        </select>
+      </div>
+      <div style="font-size:22px;color:var(--gray);padding-top:20px;flex-shrink:0">→</div>
+      <div style="flex:1;min-width:200px">
+        <label class="form-label" style="margin-bottom:6px;display:block">Site client <span style="color:#22c55e">●</span></label>
+        <select id="cs-client" style="width:100%;padding:10px 12px;background:var(--card-bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;cursor:pointer">
+          <option value="">— Choisir un site —</option>
+        </select>
+      </div>
+      <div style="padding-top:20px;flex-shrink:0">
+        <button class="btn-primary" onclick="openCompareStudio()" style="height:42px;padding:0 20px">
+          ✏️ Ouvrir le studio
+        </button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- MODAL RAPPORT -->
+<div id="modal-overlay" onclick="closeModal(event)">
+  <div id="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">report.md</span>
+      <button class="modal-close" onclick="closeModal()" aria-label="Fermer la modale">✕</button>
+    </div>
+    <div class="modal-body">
+      <pre id="report-content">Chargement…</pre>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="btn-copy-report" onclick="copyReport()">Copier tout</button>
+      <a class="btn-secondary" id="btn-download-report" href="#" download>⬇ Télécharger .md</a>
+      <button class="btn-secondary" onclick="closeModal()">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentJobId = null;
+  let currentDomain = null;
+  let currentStep = 0;
+
+  // Colorize a log line
+  function colorizeLine(raw) {
+    const line = raw.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    if (/^\[(\d+)\/6\]/.test(raw))      return `<span class="l-step">${line}</span>`;
+    if (/^[✓✔]/.test(raw))              return `<span class="l-done">${line}</span>`;
+    if (/^[⚠]/.test(raw))               return `<span class="l-warn">${line}</span>`;
+    if (/^[✗]|^\[stderr\]/.test(raw))   return `<span class="l-error">${line}</span>`;
+    if (/^  [→]/.test(raw))             return `<span class="l-sub">${line}</span>`;
+    if (/^  [+]/.test(raw))             return `<span class="l-asset">${line}</span>`;
+    if (/ℹ/.test(raw))                  return `<span class="l-info">${line}</span>`;
+    if (/[╔╗╚╝║═]/.test(raw))          return `<span class="l-box">${line}</span>`;
+    return `<span class="l-plain">${line}</span>`;
+  }
+
+  function appendLog(line) {
+    const out = document.getElementById('log-output');
+    out.innerHTML += colorizeLine(line) + '\n';
+    out.scrollTop = out.scrollHeight;
+
+    // Update step bar
+    const m = line.match(/^\[(\d+)\/6\]/);
+    if (m) {
+      const n = parseInt(m[1]);
+      for (let i = 1; i < n; i++) {
+        const dot = document.getElementById('s' + i);
+        if (dot) { dot.classList.remove('active'); dot.classList.add('done'); }
+      }
+      const cur = document.getElementById('s' + n);
+      if (cur) { cur.classList.add('active'); cur.classList.remove('done'); }
+      currentStep = n;
+    }
+  }
+
+  function startScrape() {
+    const input    = document.getElementById('url-input');
+    const errorMsg = document.getElementById('url-error');
+    const url      = input.value.trim();
+
+    // Validation
+    if (!url) { input.focus(); return; }
+    const normalized = url.startsWith('http://') || url.startsWith('https://')
+      ? url
+      : 'https://' + url;
+    input.value = normalized;
+
+    try { new URL(normalized); }
+    catch {
+      input.classList.add('input-error');
+      errorMsg.classList.add('visible');
+      input.focus();
+      return;
+    }
+    input.classList.remove('input-error');
+    errorMsg.classList.remove('visible');
+
+    const depth = document.getElementById('sel-depth').value;
+    const screenshots = document.getElementById('chk-screenshots').checked;
+    const zip = document.getElementById('chk-zip').checked;
+
+    document.getElementById('btn-start').disabled = true;
+
+    fetch('/api/scrape', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url, depth: parseInt(depth), screenshots, zip }),
+    })
+    .then(r => r.json())
+    .then(({ jobId }) => {
+      currentJobId = jobId;
+      currentStep = 0;
+
+      // Switch to log view
+      document.getElementById('form-section').style.display = 'none';
+      const logSec = document.getElementById('log-section');
+      logSec.style.display = 'block';
+      document.getElementById('log-output').innerHTML = '';
+      document.getElementById('result-section').style.display = 'none';
+
+      try { currentDomain = new URL(url).hostname; } catch {}
+      document.getElementById('log-title').textContent = `Analyse de ${currentDomain || url}`;
+
+      setStatus('running');
+
+      const es = new EventSource(`/api/stream/${jobId}`);
+      es.addEventListener('log', e => {
+        const { line } = JSON.parse(e.data);
+        appendLog(line);
+      });
+      es.addEventListener('done', e => {
+        const { status, domain, mockupReady } = JSON.parse(e.data);
+        if (domain) currentDomain = domain;
+        es.close();
+        onJobDone(status, mockupReady);
+      });
+      es.onerror = () => { es.close(); onJobDone('error'); };
+    })
+    .catch(() => {
+      document.getElementById('btn-start').disabled = false;
+      alert('Impossible de démarrer le job. Le serveur est-il actif ?');
+    });
+  }
+
+  function setStatus(status) {
+    const badge = document.getElementById('status-badge');
+    const txt   = document.getElementById('status-text');
+    badge.className = 'status-badge';
+    if (status === 'running') { badge.classList.add('status-running'); txt.textContent = 'En cours'; }
+    if (status === 'done')    { badge.classList.add('status-done');    txt.textContent = 'Terminé'; }
+    if (status === 'error')   { badge.classList.add('status-error');   txt.textContent = 'Erreur'; }
+    // Remove pulse dot if not running
+    const pulse = badge.querySelector('.pulse');
+    if (pulse) pulse.style.display = status === 'running' ? 'block' : 'none';
+  }
+
+  function onJobDone(status, mockupReady) {
+    setStatus(status);
+
+    for (let i = 1; i <= 6; i++) {
+      const dot = document.getElementById('s' + i);
+      if (!dot) continue;
+      if (status === 'done') { dot.classList.remove('active'); dot.classList.add('done'); }
+      else dot.style.background = 'var(--border)';
+    }
+
+    const resultSec   = document.getElementById('result-section');
+    const resultCard  = document.getElementById('result-card');
+    const resultTitle = document.getElementById('result-title');
+    const resultSub   = document.getElementById('result-sub');
+    const actions     = document.getElementById('result-actions');
+    actions.innerHTML = '';
+
+    if (status === 'done') {
+      resultCard.className = 'result-card success';
+      resultTitle.textContent = `✓ Analyse de ${currentDomain} terminée`;
+      resultSub.textContent = `Mockup + rapport disponibles dans output/${currentDomain}/`;
+
+      if (currentDomain) {
+        const btnReport = document.createElement('button');
+        btnReport.className = 'btn-xs primary';
+        btnReport.textContent = 'Voir report.md';
+        btnReport.onclick = () => openReport(currentDomain);
+        actions.appendChild(btnReport);
+
+        const btnMockup = document.createElement('a');
+        if (mockupReady) {
+          btnMockup.className = 'btn-xs primary';
+          btnMockup.textContent = '🖼 Voir le mockup';
+          btnMockup.href = `/output/${currentDomain}/mockup/index.html`;
+          btnMockup.target = '_blank';
+        } else {
+          btnMockup.className = 'btn-xs';
+          btnMockup.textContent = '⚡ Générer mockup';
+          btnMockup.onclick = (e) => { e.preventDefault(); generateMockup(currentDomain, btnMockup); };
+          btnMockup.href = '#';
+        }
+        actions.appendChild(btnMockup);
+      }
+    } else {
+      resultCard.className = 'result-card error';
+      resultTitle.textContent = '✗ Le scraping a rencontré une erreur';
+      resultSub.textContent = 'Consultez les logs ci-dessus pour les détails.';
+    }
+
+    resultSec.style.display = 'block';
+    loadHistory();
+  }
+
+  function resetToForm() {
+    document.getElementById('log-section').style.display = 'none';
+    document.getElementById('form-section').style.display = 'block';
+    document.getElementById('btn-start').disabled = false;
+    document.getElementById('url-input').value = '';
+    currentJobId = null;
+    currentDomain = null;
+    currentStep = 0;
+    // Reset step bar
+    for (let i = 1; i <= 6; i++) {
+      const dot = document.getElementById('s' + i);
+      if (dot) { dot.className = 'step-dot'; dot.style.background = ''; }
+    }
+  }
+
+  // ── History ──────────────────────────────────────────────────────────
+  function loadHistory() {
+    const grid = document.getElementById('history-grid');
+    grid.innerHTML = `
+      <div class="history-card" style="opacity:.4">
+        <div style="height:14px;background:var(--border);border-radius:4px;margin-bottom:8px;width:70%"></div>
+        <div style="height:11px;background:var(--border);border-radius:4px;margin-bottom:16px;width:40%"></div>
+        <div style="display:flex;gap:8px">
+          <div style="height:36px;width:80px;background:var(--border);border-radius:6px"></div>
+          <div style="height:36px;width:60px;background:var(--border);border-radius:6px"></div>
+        </div>
+      </div>`;
+
+    fetch('/api/history')
+      .then(r => r.json())
+      .then(items => {
+        if (!items.length) {
+          grid.innerHTML = '<p class="empty-state">Aucune analyse trouvée dans ./output/</p>';
+          return;
+        }
+        // Populate compare-studio selects
+        const refSel    = document.getElementById('cs-ref');
+        const clientSel = document.getElementById('cs-client');
+        refSel.innerHTML    = '<option value="">— Choisir un site —</option>';
+        clientSel.innerHTML = '<option value="">— Choisir un site —</option>';
+        items.forEach((item, i) => {
+          const o1 = new Option(item.domain, item.domain);
+          const o2 = new Option(item.domain, item.domain);
+          if (i === 0) { o1.selected = true; }  // most recent = ref by default
+          if (i === 1) { o2.selected = true; }  // second = client by default
+          refSel.appendChild(o1);
+          clientSel.appendChild(o2);
+        });
+        if (items.length >= 2) {
+          document.getElementById('compare-studio-section').style.display = 'block';
+        }
+
+        grid.innerHTML = items.map(item => {
+          const d = escHtml(item.domain);
+          const thumb = `/output/${d}/screenshots/index--desktop.png`;
+          const mockupHref = `/output/${d}/mockup/index.html`;
+          return `
+          <div class="history-card">
+            <div class="history-thumb">
+              <img src="${thumb}" alt="" loading="lazy"
+                   onerror="this.parentNode.innerHTML='<div class=\\'history-thumb-placeholder\\'>🌐</div>'">
+            </div>
+            <div class="history-info">
+              <div class="history-domain">${d}</div>
+              <div class="history-date">${formatDate(item.date)}</div>
+            </div>
+            <div class="history-actions">
+              ${item.hasReport
+                ? `<button class="btn-xs primary" onclick="openReport('${d}')">📄 rapport</button>`
+                : ''}
+              ${item.hasMockup
+                ? `<a class="btn-xs green" href="${mockupHref}" target="_blank">🖼 Mockup</a>`
+                : `<button class="btn-xs" onclick="generateMockup('${d}', this)">⚡ Générer</button>`}
+              <a class="btn-xs primary" href="/studio/${d}" target="_blank">🎨 Studio</a>
+              ${item.hasReport
+                ? `<button class="btn-xs" onclick="openAuditPrompt('${d}')">📋 Prompt</button>`
+                : ''}
+              ${item.hasVariants
+                ? `<a class="btn-xs" href="/compare/${d}" target="_blank">⚖ Variantes</a>`
+                : `<button class="btn-xs" onclick="generateVariants('${d}', this)">✦ +3 var.</button>`}
+              <a class="btn-xs" href="/output/${d}/" target="_blank">📁 Dossier</a>
+            </div>
+          </div>`;
+        }).join('');
+      })
+      .catch(() => {
+        grid.innerHTML = '<p class="empty-state" style="color:var(--red)">⚠ Serveur non disponible — lance <code>npm run server</code></p>';
+      });
+  }
+
+  function openCompareStudio() {
+    const ref    = document.getElementById('cs-ref').value;
+    const client = document.getElementById('cs-client').value;
+    if (!ref || !client) { alert('Choisis les deux sites.'); return; }
+    if (ref === client)  { alert('Choisis deux sites différents.'); return; }
+    window.open(`/compare-studio/${ref}/${client}`, '_blank');
+  }
+
+  function formatDate(iso) {
+    const d = new Date(iso);
+    return d.toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'numeric' })
+      + ' ' + d.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Report modal ──────────────────────────────────────────────────────
+  function openReport(domain) {
+    document.getElementById('modal-title').textContent = `report.md — ${domain}`;
+    document.getElementById('report-content').textContent = 'Chargement…';
+    document.getElementById('btn-download-report').href = `/api/report/${encodeURIComponent(domain)}/download`;
+    document.getElementById('modal-overlay').classList.add('open');
+    fetch(`/api/report/${encodeURIComponent(domain)}`)
+      .then(r => r.json())
+      .then(({ content }) => {
+        document.getElementById('report-content').textContent = content;
+      })
+      .catch(() => {
+        document.getElementById('report-content').textContent = 'Erreur : rapport introuvable.';
+      });
+  }
+
+  function openAuditPrompt(domain) {
+    document.getElementById('modal-title').textContent = `Prompt d'audit — ${domain}`;
+    document.getElementById('report-content').textContent = 'Génération du prompt…';
+    document.getElementById('btn-download-report').href = '#';
+    document.getElementById('modal-overlay').classList.add('open');
+    fetch(`/api/audit-prompt/${encodeURIComponent(domain)}`)
+      .then(r => r.json())
+      .then(({ content }) => {
+        document.getElementById('report-content').textContent = content;
+      })
+      .catch(() => {
+        document.getElementById('report-content').textContent = 'Erreur : impossible de générer le prompt.';
+      });
+  }
+
+  function closeModal(e) {
+    if (!e || e.target === document.getElementById('modal-overlay') || e.currentTarget === document.querySelector('.modal-close')) {
+      document.getElementById('modal-overlay').classList.remove('open');
+    }
+  }
+
+  function copyReport() {
+    const text = document.getElementById('report-content').textContent;
+    navigator.clipboard.writeText(text).catch(() => {});
+    const btn = document.getElementById('btn-copy-report');
+    const orig = btn.textContent;
+    btn.textContent = 'Copié ✓';
+    setTimeout(() => btn.textContent = orig, 1500);
+  }
+
+  // ── Mockup generation ────────────────────────────────────────────
+  function generateMockup(domain, btn) {
+    const orig = btn.textContent;
+    btn.textContent = '⏳ Génération…';
+    btn.disabled = true;
+    fetch('/api/mockup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ domain }),
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.ok) {
+        btn.textContent = '✓ Mockup prêt';
+        btn.className = 'btn-xs primary';
+        btn.onclick = () => window.open(`/output/${domain}/mockup/index.html`, '_blank');
+      } else {
+        btn.textContent = '✗ Erreur';
+        btn.disabled = false;
+      }
+    })
+    .catch(() => { btn.textContent = orig; btn.disabled = false; });
+  }
+
+  function generateVariants(domain, btn) {
+    const orig = btn.textContent;
+    btn.textContent = '⏳ Génération…';
+    btn.disabled = true;
+    fetch(`/api/variants/${encodeURIComponent(domain)}`, { method: 'POST' })
+    .then(r => r.json())
+    .then(data => {
+      if (data.ok) {
+        btn.textContent = '⚖ Comparer';
+        btn.disabled = false;
+        btn.onclick = () => window.open(`/compare/${encodeURIComponent(domain)}`, '_blank');
+      } else {
+        btn.textContent = '✗ ' + (data.error || 'Erreur');
+        btn.disabled = false;
+        setTimeout(() => { btn.textContent = orig; }, 3000);
+      }
+    })
+    .catch(() => { btn.textContent = orig; btn.disabled = false; });
+  }
+
+  // Enter key on URL input
+  document.getElementById('url-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') startScrape();
+  });
+
+  // Escape closes modal
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.getElementById('modal-overlay').classList.remove('open');
+  });
+
+  // Clear URL error on input
+  document.getElementById('url-input').addEventListener('input', () => {
+    document.getElementById('url-input').classList.remove('input-error');
+    document.getElementById('url-error').classList.remove('visible');
+  });
+
+  // Initial load
+  loadHistory();
+</script>
+</body>
+</html>

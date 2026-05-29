@@ -1,0 +1,28 @@
+# Dépendances npm
+node_modules/
+
+# Données de scraping (trop lourdes + contenu tiers)
+output/
+
+# Archives ZIP générées
+*.tar.gz
+*.zip
+
+# Logs
+*.log
+logs/
+
+# Variables d'environnement
+.env
+.env.local
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Dossier Claude Code (config locale)
+.claude/
+
+# Notes de session personnelles
+brief-site-scraper-session.md
