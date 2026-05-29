@@ -412,6 +412,45 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: var(--gray); }
+
+    /* OS SETTINGS */
+    .btn-icon {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 7px 12px; font-size: 13px;
+      color: var(--text2); cursor: pointer;
+      transition: background .2s, color .2s; white-space: nowrap;
+    }
+    .btn-icon:hover { background: rgba(255,255,255,.07); color: var(--text); }
+    .os-connected-badge {
+      font-size: 11px; padding: 3px 9px; border-radius: 99px;
+      background: rgba(34,197,94,.12); color: var(--green);
+      border: 1px solid rgba(34,197,94,.3); white-space: nowrap;
+    }
+    #os-settings-panel {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.65); z-index: 200;
+      align-items: center; justify-content: center; padding: 24px;
+    }
+    #os-settings-panel.open { display: flex; }
+    #os-settings-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 28px;
+      width: 100%; max-width: 460px;
+    }
+    .settings-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .settings-desc  { font-size: 12px; color: var(--text2); margin-bottom: 22px; line-height: 1.5; }
+    .settings-field { margin-bottom: 16px; }
+    .settings-field label {
+      display: block; font-size: 12px; font-weight: 500;
+      color: var(--text2); margin-bottom: 6px;
+    }
+    .settings-field input {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 14px; color: var(--text); font-size: 14px;
+      outline: none; transition: border-color .2s;
+    }
+    .settings-field input:focus { border-color: var(--accent); }
+    .settings-row { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
   </style>
 </head>
 <body>
@@ -419,6 +458,10 @@
 <header>
   <div class="logo">⚡</div>
   <h1>Site Scraper <span>— Rétro-ingénierie web</span></h1>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+    <span id="os-connected-badge" style="display:none" class="os-connected-badge">⬆ OS connecté</span>
+    <button class="btn-icon" onclick="openOsSettings()">⚙ OS Settings</button>
+  </div>
 </header>
 
 <main>
@@ -531,6 +574,26 @@
   </div>
 
 </main>
+
+<!-- OS SETTINGS PANEL -->
+<div id="os-settings-panel" onclick="closeOsSettings(event)">
+  <div id="os-settings-box">
+    <div class="settings-title">⚙ Connexion Start'OnLab OS</div>
+    <div class="settings-desc">Configure l'URL et le secret partagé pour envoyer les analyses vers Start'OnLab OS.</div>
+    <div class="settings-field">
+      <label for="os-url-input">URL de l'OS</label>
+      <input type="url" id="os-url-input" placeholder="https://startonlab-os.vercel.app" autocomplete="off">
+    </div>
+    <div class="settings-field">
+      <label for="os-secret-input">Clé secrète (X-WRS-Secret)</label>
+      <input type="password" id="os-secret-input" placeholder="••••••••" autocomplete="off">
+    </div>
+    <div class="settings-row">
+      <button class="btn-secondary" onclick="closeOsSettings()">Annuler</button>
+      <button class="btn-primary" onclick="saveOsSettings()">Sauvegarder</button>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL RAPPORT -->
 <div id="modal-overlay" onclick="closeModal(event)">
@@ -920,6 +983,36 @@
     .catch(() => { btn.textContent = orig; btn.disabled = false; });
   }
 
+  // ── OS Settings ─────────────────────────────────────────────────────
+  function getOsUrl()    { return window._wrsOsUrl || localStorage.getItem('wrs_os_url') || ''; }
+  function getOsSecret() { return localStorage.getItem('wrs_os_secret') || ''; }
+
+  function updateOsBadge() {
+    const badge = document.getElementById('os-connected-badge');
+    if (badge) badge.style.display = getOsUrl() ? 'inline' : 'none';
+  }
+
+  function openOsSettings() {
+    document.getElementById('os-url-input').value    = getOsUrl();
+    document.getElementById('os-secret-input').value = getOsSecret();
+    document.getElementById('os-settings-panel').classList.add('open');
+  }
+
+  function closeOsSettings(e) {
+    if (!e || e.target === document.getElementById('os-settings-panel')) {
+      document.getElementById('os-settings-panel').classList.remove('open');
+    }
+  }
+
+  function saveOsSettings() {
+    const url    = document.getElementById('os-url-input').value.trim();
+    const secret = document.getElementById('os-secret-input').value.trim();
+    if (url)    localStorage.setItem('wrs_os_url', url);    else localStorage.removeItem('wrs_os_url');
+    if (secret) localStorage.setItem('wrs_os_secret', secret); else localStorage.removeItem('wrs_os_secret');
+    updateOsBadge();
+    document.getElementById('os-settings-panel').classList.remove('open');
+  }
+
   // Enter key on URL input
   document.getElementById('url-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') startScrape();
@@ -938,6 +1031,21 @@
 
   // Initial load
   loadHistory();
+  updateOsBadge();
+
+  // Init from query params (e.g. launched from Start'OnLab OS)
+  (function () {
+    const params = new URLSearchParams(window.location.search);
+    const pUrl = params.get('url');
+    window._wrsProspectId = params.get('prospect_id') || null;
+    window._wrsProjectId  = params.get('project_id')  || null;
+    window._wrsOsUrl      = params.get('os_url')       || null;
+    window._wrsClient     = params.get('client')        || null;
+
+    if (pUrl) document.getElementById('url-input').value = pUrl;
+    if (window._wrsOsUrl) updateOsBadge();
+    if (pUrl) setTimeout(startScrape, 300);
+  })();
 </script>
 </body>
 </html>
