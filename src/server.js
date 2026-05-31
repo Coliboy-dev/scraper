@@ -10,6 +10,9 @@ import { generateVariants, variantsExist, getVariantTheme } from './modules/vari
 import { calculerScores, extrairePointsForts, extrairePointsFaibles, extraireRecommandations } from './modules/scores.js';
 import { genererClaudeMd, genererMissionMd } from './modules/handoff-docs.js';
 
+// Charge .env si présent (Node 20.12+ natif, pas de dépendance dotenv)
+try { process.loadEnvFile(); } catch {}
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
 
@@ -487,14 +490,18 @@ app.post('/api/send-to-os/:domain', async (req, res) => {
   try { domain = safeDomain(req.params.domain); }
   catch (e) { return res.status(400).json({ error: e.message }); }
 
-  const { os_url, os_secret, prospect_id, project_id, client } = req.body;
+  const { prospect_id, project_id, client } = req.body;
+
+  // Env vars priment sur les valeurs du body (UI settings en fallback)
+  const effectiveOsUrl    = process.env.OS_URL    || req.body.os_url    || '';
+  const effectiveOsSecret = process.env.OS_SECRET || req.body.os_secret || '';
 
   let parsedOsUrl;
   try {
-    parsedOsUrl = new URL(os_url);
+    parsedOsUrl = new URL(effectiveOsUrl);
     if (!['http:', 'https:'].includes(parsedOsUrl.protocol)) throw new Error();
   } catch {
-    return res.status(400).json({ error: 'URL OS invalide (http/https requis)' });
+    return res.status(400).json({ error: 'OS_URL invalide ou non configuré — vérifiez .env ou les paramètres OS' });
   }
   const osBase = parsedOsUrl.href.replace(/\/$/, '');
 
@@ -523,7 +530,7 @@ app.post('/api/send-to-os/:domain', async (req, res) => {
 
   const headers = {
     'Content-Type': 'application/json',
-    ...(os_secret ? { 'x-wrs-secret': os_secret } : {}),
+    ...(effectiveOsSecret ? { 'x-wrs-secret': effectiveOsSecret } : {}),
   };
 
   const results = {};
@@ -589,5 +596,17 @@ app.post('/api/send-to-os/:domain', async (req, res) => {
 
 const PORT = process.env.PORT || 3456;
 app.listen(PORT, () => {
-  console.log(`\n  Site Scraper UI  →  http://localhost:${PORT}\n  Ctrl+C pour arreter\n`);
+  console.log(`\n  Web Refactor Studio  →  http://localhost:${PORT}`);
+  if (process.env.OS_URL) {
+    console.log(`  OS connecté          →  ${process.env.OS_URL}`);
+    if (!process.env.OS_SECRET) {
+      console.warn('  ⚠  OS_SECRET non défini — les envois vers l\'OS seront non authentifiés');
+    } else {
+      console.log('  OS_SECRET            →  ✓ configuré');
+    }
+  } else {
+    console.warn('  ⚠  OS_URL non défini  — intégration OS désactivée côté serveur');
+    console.warn('     (configurez .env ou utilisez le panneau ⚙ OS Settings dans l\'interface)');
+  }
+  console.log('  Ctrl+C pour arrêter\n');
 });
