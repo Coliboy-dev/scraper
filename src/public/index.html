@@ -775,14 +775,22 @@
         }
         actions.appendChild(btnMockup);
 
-        // Bouton OS si configuré
-        if (getOsUrl()) {
+        // OS : auto-envoi si lancé depuis l'OS (prospect_id présent), bouton manuel sinon
+        if (window._wrsProspectId || osAvailable()) {
           const btnOs = document.createElement('button');
           btnOs.id = 'btn-send-os';
           btnOs.className = 'btn-xs';
-          btnOs.textContent = '⬆ Envoyer vers l\'OS';
-          btnOs.onclick = () => sendToOs(currentDomain);
+          if (window._wrsProspectId) {
+            btnOs.textContent = '⏳ Envoi automatique vers l\'OS…';
+            btnOs.disabled = true;
+          } else {
+            btnOs.textContent = '⬆ Envoyer vers l\'OS';
+            btnOs.onclick = () => sendToOs(currentDomain);
+          }
           actions.appendChild(btnOs);
+          if (window._wrsProspectId) {
+            setTimeout(() => sendToOs(currentDomain, true), 600);
+          }
         }
       }
     } else {
@@ -994,8 +1002,9 @@
   }
 
   // ── OS Settings ─────────────────────────────────────────────────────
-  function getOsUrl()    { return window._wrsOsUrl || localStorage.getItem('wrs_os_url') || ''; }
+  function getOsUrl()    { return window._wrsOsUrl || window.__WRS?.osUrl || localStorage.getItem('wrs_os_url') || ''; }
   function getOsSecret() { return localStorage.getItem('wrs_os_secret') || ''; }
+  function osAvailable() { return !!(getOsUrl() || window.__WRS?.osConfigured); }
 
   function updateOsBadge() {
     const badge = document.getElementById('os-connected-badge');
@@ -1024,17 +1033,17 @@
   }
 
   // ── Send to OS ───────────────────────────────────────────────────────
-  function sendToOs(domain) {
-    const osUrl = getOsUrl();
-    if (!osUrl) { openOsSettings(); return; }
+  // auto=true : déclenché automatiquement après analyse (pas de clic requis)
+  function sendToOs(domain, auto) {
+    if (!osAvailable()) { if (!auto) openOsSettings(); return; }
     const btn = document.getElementById('btn-send-os');
-    btn.textContent = '⏳ Envoi…';
-    btn.disabled = true;
+    if (btn) { btn.textContent = '⏳ Envoi…'; btn.disabled = true; }
+
     fetch(`/api/send-to-os/${encodeURIComponent(domain)}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        os_url:      osUrl,
+        os_url:      getOsUrl(),
         os_secret:   getOsSecret(),
         prospect_id: window._wrsProspectId || null,
         project_id:  window._wrsProjectId  || null,
@@ -1043,6 +1052,7 @@
     })
     .then(r => r.json())
     .then(data => {
+      if (!btn) return;
       if (data.succes) {
         btn.textContent = '✓ Envoyé vers l\'OS';
         btn.className = 'btn-xs green';
@@ -1053,6 +1063,7 @@
       }
     })
     .catch(() => {
+      if (!btn) return;
       btn.textContent = '✗ Erreur réseau';
       btn.disabled = false;
       setTimeout(() => { btn.textContent = '⬆ Envoyer vers l\'OS'; btn.disabled = false; }, 4000);

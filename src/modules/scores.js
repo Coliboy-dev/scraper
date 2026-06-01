@@ -39,7 +39,8 @@ export function calculerScores({ audit = {}, content = {}, design = {}, sitemap 
   if (features.includes('Tarifs / Pricing'))                        score_conversion += 20;
 
   // ── score_global (weighted avg) ───────────────────────────────────────────
-  const score_global = Math.round(
+  const clamp = v => Math.max(0, Math.min(100, Math.round(v)));
+  const score_global = clamp(
     score_seo         * 0.25 +
     score_mobile      * 0.20 +
     score_performance * 0.20 +
@@ -49,11 +50,11 @@ export function calculerScores({ audit = {}, content = {}, design = {}, sitemap 
 
   return {
     score_global,
-    score_seo,
-    score_mobile,
-    score_performance,
-    score_ux,
-    score_conversion,
+    score_seo:         clamp(score_seo),
+    score_mobile:      clamp(score_mobile),
+    score_performance: clamp(score_performance),
+    score_ux:          clamp(score_ux),
+    score_conversion:  clamp(score_conversion),
   };
 }
 

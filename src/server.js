@@ -42,6 +42,25 @@ if (PLAYWRIGHT_BROWSERS_PATH) {
 
 const app = express();
 app.use(express.json());
+
+// Sert index.html dynamiquement pour injecter la config serveur (OS_URL/OS_SECRET présents ?)
+// Doit être AVANT express.static pour intercepter GET /
+app.get('/', async (_req, res) => {
+  try {
+    let html = await readFile(path.join(__dirname, 'public', 'index.html'), 'utf8');
+    // N'expose PAS OS_SECRET — le secret reste côté serveur via /api/send-to-os
+    const cfg = JSON.stringify({
+      osConfigured: !!process.env.OS_URL,
+      osUrl:        process.env.OS_URL || '',
+    });
+    html = html.replace('</head>', `  <script>window.__WRS=${cfg};</script>\n</head>`);
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
+  } catch {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  }
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/output', express.static(path.join(ROOT, 'output')));
 
